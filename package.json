@@ -6,9 +6,11 @@
     "kuhnuri": "bin/kuhnuri.js"
   },
   "scripts": {
+    "install": "tsc",
     "build": "tsc",
     "watch": "tsc -w",
     "cdk": "cdk",
+    "deploy": "cdk deploy",
     "test": "mocha"
   },
   "devDependencies": {

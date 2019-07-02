@@ -8,23 +8,26 @@ To build and deploy, the following tools are required:
 -  AWS Account and User, with _Programmatic access_ type and `AdministratorAccess` policy
 -  Node.js
 
-Bootstrap CDK with:
+## Building
+
+```bash
+npm install
+```
+
+## Deployment
+
+The first time you deploy an AWS CDK app into an environment, you’ll need to bootstrap CDK:  
 
 ```bash
 npm run cdk bootstrap
 ```
 
-## Building
+Deploy AWS Batch based DITA-OT:
 
 ```bash
-npm run build
+npm run deploy
 ```
 
-## Deployment
-
-```bash
-npm run cdk deploy
-```
 ## Donating
 
 Support this project and others by [@jelovirt](https://github.com/jelovirt) via [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=jarno%40elovirta%2ecom&lc=FI&item_name=Support%20Open%20Source%20work&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted).
