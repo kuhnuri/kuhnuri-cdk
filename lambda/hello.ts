@@ -11,12 +11,12 @@ export async function handler(event: APIGatewayEvent) {
     };
   }
   const body = JSON.parse(event.body);
-  const tasks = splitToTasks(body);
+  const job = splitToTasks(body);
   console.log("request:", JSON.stringify(event, undefined, 2));
   return {
     statusCode: 200,
-    headers: { "Content-Type": "text/plain" },
-    body: `Hello, CDK! You've hit ${event.path}\n`
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(job, undefined, 2)
   };
 }
 

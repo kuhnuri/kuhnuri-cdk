@@ -20,6 +20,23 @@ export class KuhnuriStack extends cdk.Stack {
     const vpc = new ec2.Vpc(stack, "NewVPC", {
       cidr: "10.0.0.0/16",
       natGateways: 1
+
+    // Lambda
+    // ======
+
+    const createJobRole = new iam.Role(stack, "CreateJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
+    });
+
+    const createJob = new lambda.Function(stack, "CreateJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("lambda"),
+      handler: "hello.handler",
+      role: createJobRole
+    });
+
+    new apigw.LambdaRestApi(stack, "Endpoint", {
+      handler: createJob
     });
 
     // ECR
@@ -174,7 +191,7 @@ export class KuhnuriStack extends cdk.Stack {
       });
     });
 
-    new batch.CfnJobQueue(stack, "DitaOtJobQueue", {
+    const queue = new batch.CfnJobQueue(stack, "DitaOtJobQueue", {
       computeEnvironmentOrder: [
         {
           computeEnvironment: computeEnvironment.ref,
@@ -183,6 +200,14 @@ export class KuhnuriStack extends cdk.Stack {
       ],
       priority: 0
     });
+    createJobRole.attachInlinePolicy(new iam.Policy(stack, "CreateJobPolicy", {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ["batch:SubmitJob"],
+          resources: [queue.ref]
+        })
+      ],
+    }))
 
     const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
     bucketTemp.grantReadWrite(batchInstanceRole);
