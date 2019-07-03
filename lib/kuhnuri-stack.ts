@@ -9,7 +9,7 @@ import s3 = require("@aws-cdk/aws-s3");
 import ecr = require("@aws-cdk/aws-ecr");
 import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
-import conf from '../config'
+import conf from "../config";
 
 export class KuhnuriStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -159,9 +159,12 @@ export class KuhnuriStack extends cdk.Stack {
       }
     );
 
-    workers.forEach((worker, i) => {
+    const jobDefinitions = workers.map((worker, i) => {
       const image = worker.asset ? worker.asset.imageUri : conf.baseImage;
-      new batch.CfnJobDefinition(stack, `DitaOtJobDefinition_${i}`, {
+      const jobDefinition = new batch.CfnJobDefinition(
+        stack,
+        `DitaOtJobDefinition_${i}`,
+        {
         type: "container",
         // jobDefinitionName: "DitaOtJobDefinition",
         parameters: {
@@ -188,8 +191,20 @@ export class KuhnuriStack extends cdk.Stack {
           vcpus: 1
           // volumes : [ Volumes, ... ]
         }
+        }
+      );
+      return jobDefinition;
       });
-    });
+    createJobRole.attachInlinePolicy(
+      new iam.Policy(stack, "CreateJobPolicy", {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ["batch:SubmitJob"],
+            resources: jobDefinitions.map(jobDefinition => jobDefinition.ref)
+          })
+        ]
+      })
+    );
 
     const queue = new batch.CfnJobQueue(stack, "DitaOtJobQueue", {
       computeEnvironmentOrder: [
@@ -200,14 +215,6 @@ export class KuhnuriStack extends cdk.Stack {
       ],
       priority: 0
     });
-    createJobRole.attachInlinePolicy(new iam.Policy(stack, "CreateJobPolicy", {
-      statements: [
-        new iam.PolicyStatement({
-          actions: ["batch:SubmitJob"],
-          resources: [queue.ref]
-        })
-      ],
-    }))
 
     const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
     bucketTemp.grantReadWrite(batchInstanceRole);
