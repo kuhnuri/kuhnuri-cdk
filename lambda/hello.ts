@@ -1,6 +1,8 @@
 import { Create, Job, Status, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { objectToCloudFormation } from "@aws-cdk/core";
+import * as Batch from "aws-sdk/clients/batch";
+import * as UUID from "uuid";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.body) {
@@ -13,10 +15,64 @@ export async function handler(event: APIGatewayEvent) {
   const body = JSON.parse(event.body);
   const job = splitToTasks(body);
   console.log("request:", JSON.stringify(event, undefined, 2));
+  const result = submitJob(job);
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify(job, undefined, 2)
+    body: JSON.stringify(result, undefined, 2)
+  };
+}
+
+async function submitJob(job: Job): Promise<Job> {
+  const client = new Batch();
+
+  let dependsOn: Batch.JobDependency[] = [];
+  const tasks = [];
+
+  for (let task of job.transtype) {
+    let params: Batch.SubmitJobRequest = {
+      jobName: task.id,
+      jobDefinition: readEnv(`JOB_DEFINITION_${task.transtype}`),
+      jobQueue: readEnv("JOB_QUEUE"),
+      dependsOn,
+      containerOverrides: {
+        command: [`-Dtranstype=${task.transtype}`],
+        environment: [
+          {
+            name: "input",
+            value: task.input
+          },
+          {
+            name: "output",
+            value: task.output
+          }
+        ]
+      }
+      // parameters: {
+      //   bucketName: IMAGES_BUCKET,
+      //   imageName: event.imageName,
+      //   dynamoTable: IMAGES_BUCKET
+      // }
+    };
+
+    const result = await client.submitJob(params).promise();
+    console.log(`Started AWS Batch job ${result.jobId}`);
+
+    dependsOn = [
+      {
+        jobId: result.jobId
+      }
+    ];
+
+    tasks.push({
+      ...task,
+      id: result.jobId
+    });
+  }
+
+  return {
+    ...job,
+    transtype: tasks
   };
 }
 
@@ -29,7 +85,7 @@ export function splitToTasks(body: Create): Job {
     (acc, cur) => acc.concat(jobDefinitions[cur] || [cur]),
     [] as string[]
   );
-  const jobId = body.id || "guid";
+  const jobId = body.id || UUID.v4();
   const tasks = transtypes.map((transtype, i) => {
     const isFirst = i === 0;
     const isLast = i === transtypes.length - 1;
@@ -64,6 +120,15 @@ export function splitToTasks(body: Create): Job {
 
   function generateTempUri(taskId: string): URI {
     return `s3:/foo/temp/${taskId}`;
+  }
+}
+
+function readEnv(name: string): string {
+  const value = process.env[name];
+  if (value) {
+    return value;
+  } else {
+    throw new Error(`Unable to find environment variable ${name}`);
   }
 }
 

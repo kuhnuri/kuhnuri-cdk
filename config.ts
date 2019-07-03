@@ -5,7 +5,8 @@ export default {
   baseImage: "jelovirt/kuhnuri_batch_worker:3.2",
   workers: [
     {
-      plugins: ["com.elovirta.fo", "com.elovirta.ooxml"]
+      transtypes: ["html5", "fo"],
+      plugins: ["com.elovirta.fo"]
     }
   ]
 } as Config;

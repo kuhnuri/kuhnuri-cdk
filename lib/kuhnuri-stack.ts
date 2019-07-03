@@ -193,14 +193,16 @@ export class KuhnuriStack extends cdk.Stack {
         }
         }
       );
-      return jobDefinition;
+      return { jobDefinition, transtypes: worker.transtypes };
       });
     createJobRole.attachInlinePolicy(
       new iam.Policy(stack, "CreateJobPolicy", {
         statements: [
           new iam.PolicyStatement({
             actions: ["batch:SubmitJob"],
-            resources: jobDefinitions.map(jobDefinition => jobDefinition.ref)
+            resources: jobDefinitions.map(
+              jobDefinition => jobDefinition.jobDefinition.ref
+            )
           })
         ]
       })
@@ -215,6 +217,15 @@ export class KuhnuriStack extends cdk.Stack {
       ],
       priority: 0
     });
+    jobDefinitions.forEach(jobDefinition => {
+      jobDefinition.transtypes.forEach(transtype => {
+        createJob.addEnvironment(
+          `JOB_DEFINITION_${transtype}`,
+          jobDefinition.jobDefinition.ref
+        );
+      });
+    });
+    createJob.addEnvironment("JOB_QUEUE", queue.ref);
 
     const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
     bucketTemp.grantReadWrite(batchInstanceRole);

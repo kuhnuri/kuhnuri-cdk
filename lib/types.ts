@@ -3,6 +3,7 @@ export type Config = {
   baseImage: string;
   workers: [
     {
+      transtypes: string[];
       plugins: string[];
     }
   ];
