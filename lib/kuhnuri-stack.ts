@@ -32,7 +32,8 @@ export class KuhnuriStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_10_X,
       code: lambda.Code.asset("lambda"),
       handler: "hello.handler",
-      role: createJobRole
+      role: createJobRole,
+      vpc
     });
 
     new apigw.LambdaRestApi(stack, "Endpoint", {
