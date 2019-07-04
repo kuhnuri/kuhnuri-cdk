@@ -211,9 +211,9 @@ export class KuhnuriStack extends cdk.Stack {
         statements: [
           new iam.PolicyStatement({
             actions: ["batch:SubmitJob"],
-            resources: jobDefinitions.map(
-              jobDefinition => jobDefinition.jobDefinition.ref
-            )
+            resources: jobDefinitions
+              .map(jobDefinition => jobDefinition.jobDefinition.ref)
+              .concat(queue.ref)
           })
           // new iam.PolicyStatement({
           //   actions: [
