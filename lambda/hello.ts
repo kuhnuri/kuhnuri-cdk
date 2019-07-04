@@ -1,10 +1,9 @@
-import { Create, Job, Status, Task, URI } from "./types";
+import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
-import { objectToCloudFormation } from "@aws-cdk/core";
-import * as Batch from "aws-sdk/clients/batch";
-import * as UUID from "uuid";
+import { Batch, Lambda } from "aws-sdk";
 
 export async function handler(event: APIGatewayEvent) {
+  console.log("request:", JSON.stringify(event, undefined, 2));
   if (!event.body) {
     return {
       statusCode: 422,
@@ -13,8 +12,8 @@ export async function handler(event: APIGatewayEvent) {
     };
   }
   const body = JSON.parse(event.body);
-  const job = splitToTasks(body);
-  console.log("request:", JSON.stringify(event, undefined, 2));
+  console.log("Create", body);
+  const job = splitToTasks(body, event.requestContext.requestId);
   const result = submitJob(job);
   return {
     statusCode: 200,
@@ -80,12 +79,12 @@ const jobDefinitions: Record<string, string[]> = {
   html5: ["html5"]
 };
 
-export function splitToTasks(body: Create): Job {
+export function splitToTasks(body: Create, id: string): Job {
   const transtypes = body.transtype.reduce(
     (acc, cur) => acc.concat(jobDefinitions[cur] || [cur]),
     [] as string[]
   );
-  const jobId = body.id || UUID.v4();
+  const jobId = body.id || id;
   const tasks = transtypes.map((transtype, i) => {
     const isFirst = i === 0;
     const isLast = i === transtypes.length - 1;

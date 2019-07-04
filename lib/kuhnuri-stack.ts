@@ -20,24 +20,10 @@ export class KuhnuriStack extends cdk.Stack {
     const vpc = new ec2.Vpc(stack, "NewVPC", {
       cidr: "10.0.0.0/16",
       natGateways: 1
-
-    // Lambda
-    // ======
-
-    const createJobRole = new iam.Role(stack, "CreateJobRole", {
-      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
     });
 
-    const createJob = new lambda.Function(stack, "CreateJobHandler", {
-      runtime: lambda.Runtime.NODEJS_10_X,
-      code: lambda.Code.asset("lambda"),
-      handler: "hello.handler",
-      role: createJobRole,
+    const securityGroup = new ec2.SecurityGroup(stack, "BatchSecurityGroup", {
       vpc
-    });
-
-    new apigw.LambdaRestApi(stack, "Endpoint", {
-      handler: createJob
     });
 
     // ECR
@@ -70,10 +56,6 @@ export class KuhnuriStack extends cdk.Stack {
 
     // Batch
     // =====
-
-    const securityGroup = new ec2.SecurityGroup(stack, "BatchSecurityGroup", {
-      vpc
-    });
 
     const batchExecutionRole = new iam.Role(stack, "BatchExecutionRole", {
       assumedBy: new iam.ServicePrincipal("batch.amazonaws.com")
@@ -166,48 +148,36 @@ export class KuhnuriStack extends cdk.Stack {
         stack,
         `DitaOtJobDefinition_${i}`,
         {
-        type: "container",
-        // jobDefinitionName: "DitaOtJobDefinition",
-        parameters: {
-          // "transtype": ""
-        },
-        containerProperties: {
-          command: ["dita"],
-          environment: [
-            {
-              name: "AWS_DEFAULT_REGION",
-              value: conf.region
-            }
-          ],
-          image,
-          // instanceType : String,
-          jobRoleArn: batchJobRole.roleArn,
-          memory: 1024,
-          // mountPoints : [ MountPoints, ... ],
-          // privileged : Boolean,
-          readonlyRootFilesystem: false,
-          // resourceRequirements : [ ResourceRequirement, ... ],
-          // ulimits : [ Ulimit, ... ],
-          // user : String,
-          vcpus: 1
-          // volumes : [ Volumes, ... ]
-        }
+          type: "container",
+          // jobDefinitionName: "DitaOtJobDefinition",
+          parameters: {
+            // "transtype": ""
+          },
+          containerProperties: {
+            command: ["dita"],
+            environment: [
+              {
+                name: "AWS_DEFAULT_REGION",
+                value: conf.region
+              }
+            ],
+            image,
+            // instanceType : String,
+            jobRoleArn: batchJobRole.roleArn,
+            memory: 1024,
+            // mountPoints : [ MountPoints, ... ],
+            // privileged : Boolean,
+            readonlyRootFilesystem: false,
+            // resourceRequirements : [ ResourceRequirement, ... ],
+            // ulimits : [ Ulimit, ... ],
+            // user : String,
+            vcpus: 1
+            // volumes : [ Volumes, ... ]
+          }
         }
       );
       return { jobDefinition, transtypes: worker.transtypes };
-      });
-    createJobRole.attachInlinePolicy(
-      new iam.Policy(stack, "CreateJobPolicy", {
-        statements: [
-          new iam.PolicyStatement({
-            actions: ["batch:SubmitJob"],
-            resources: jobDefinitions.map(
-              jobDefinition => jobDefinition.jobDefinition.ref
-            )
-          })
-        ]
-      })
-    );
+    });
 
     const queue = new batch.CfnJobQueue(stack, "DitaOtJobQueue", {
       computeEnvironmentOrder: [
@@ -218,6 +188,53 @@ export class KuhnuriStack extends cdk.Stack {
       ],
       priority: 0
     });
+
+    // S3
+    // ==
+
+    const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
+    bucketTemp.grantReadWrite(batchInstanceRole);
+
+    // Lambda
+    // ======
+
+    const createJobRole = new iam.Role(stack, "CreateJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
+    });
+    createJobRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    createJobRole.attachInlinePolicy(
+      new iam.Policy(stack, "CreateJobPolicy", {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ["batch:SubmitJob"],
+            resources: jobDefinitions.map(
+              jobDefinition => jobDefinition.jobDefinition.ref
+            )
+          })
+          // new iam.PolicyStatement({
+          //   actions: [
+          //     "ec2:DescribeSecurityGroups",
+          //     "ec2:DescribeSubnets",
+          //     "ec2:DescribeVpcs"
+          //   ],
+          //   resources: ["*"]
+          // })
+        ]
+      })
+    );
+
+    const createJob = new lambda.Function(stack, "CreateJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("lambda"),
+      handler: "hello.handler",
+      role: createJobRole
+      // vpc
+    });
+    createJob.addEnvironment("JOB_QUEUE", queue.ref);
     jobDefinitions.forEach(jobDefinition => {
       jobDefinition.transtypes.forEach(transtype => {
         createJob.addEnvironment(
@@ -226,9 +243,9 @@ export class KuhnuriStack extends cdk.Stack {
         );
       });
     });
-    createJob.addEnvironment("JOB_QUEUE", queue.ref);
 
-    const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
-    bucketTemp.grantReadWrite(batchInstanceRole);
+    new apigw.LambdaRestApi(stack, "Endpoint", {
+      handler: createJob
+    });
   }
 }
