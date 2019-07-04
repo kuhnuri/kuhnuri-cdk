@@ -6,7 +6,7 @@ import apigw = require("@aws-cdk/aws-apigateway");
 import batch = require("@aws-cdk/aws-batch");
 import ec2 = require("@aws-cdk/aws-ec2");
 import s3 = require("@aws-cdk/aws-s3");
-import ecr = require("@aws-cdk/aws-ecr");
+import dynamodb = require("@aws-cdk/aws-dynamodb");
 import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
 import conf from "../config";
@@ -20,10 +20,6 @@ export class KuhnuriStack extends cdk.Stack {
     const vpc = new ec2.Vpc(stack, "NewVPC", {
       cidr: "10.0.0.0/16",
       natGateways: 1
-    });
-
-    const securityGroup = new ec2.SecurityGroup(stack, "BatchSecurityGroup", {
-      vpc
     });
 
     // ECR
@@ -114,6 +110,10 @@ export class KuhnuriStack extends cdk.Stack {
       )
     );
 
+    const securityGroup = new ec2.SecurityGroup(stack, "BatchSecurityGroup", {
+      vpc
+    });
+
     const computeEnvironment = new batch.CfnComputeEnvironment(
       this,
       "DitaOtComputeEnvironment",
@@ -150,9 +150,7 @@ export class KuhnuriStack extends cdk.Stack {
         {
           type: "container",
           // jobDefinitionName: "DitaOtJobDefinition",
-          parameters: {
-            // "transtype": ""
-          },
+          // parameters: {},
           containerProperties: {
             command: ["dita"],
             environment: [
@@ -195,6 +193,16 @@ export class KuhnuriStack extends cdk.Stack {
     const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
     bucketTemp.grantReadWrite(batchInstanceRole);
 
+    // DynamoDB
+    // ========
+
+    const jobTable = new dynamodb.Table(this, "Job", {
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      }
+    });
+
     // Lambda
     // ======
 
@@ -215,24 +223,16 @@ export class KuhnuriStack extends cdk.Stack {
               .map(jobDefinition => jobDefinition.jobDefinition.ref)
               .concat(queue.ref)
           })
-          // new iam.PolicyStatement({
-          //   actions: [
-          //     "ec2:DescribeSecurityGroups",
-          //     "ec2:DescribeSubnets",
-          //     "ec2:DescribeVpcs"
-          //   ],
-          //   resources: ["*"]
-          // })
         ]
       })
     );
+    jobTable.grantWriteData(createJobRole);
 
     const createJob = new lambda.Function(stack, "CreateJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
       code: lambda.Code.asset("lambda"),
-      handler: "hello.handler",
+      handler: "create.handler",
       role: createJobRole
-      // vpc
     });
     createJob.addEnvironment("JOB_QUEUE", queue.ref);
     jobDefinitions.forEach(jobDefinition => {
@@ -243,6 +243,7 @@ export class KuhnuriStack extends cdk.Stack {
         );
       });
     });
+    createJob.addEnvironment("TABLE_NAME", jobTable.tableName);
 
     new apigw.LambdaRestApi(stack, "Endpoint", {
       handler: createJob

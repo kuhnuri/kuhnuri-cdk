@@ -1,4 +1,4 @@
-import { splitToTasks } from "../lambda/hello";
+import { splitToTasks } from "../lambda/create";
 import { Create, Job } from "../lambda/types";
 const assert = require("assert");
 

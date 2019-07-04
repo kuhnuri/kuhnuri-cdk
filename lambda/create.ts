@@ -1,9 +1,17 @@
 import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
-import { Batch, Lambda } from "aws-sdk";
+import { Batch, DynamoDB } from "aws-sdk";
+import { toItem } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
   console.log("request:", JSON.stringify(event, undefined, 2));
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405
+      // headers: { "Content-Type": "text/plain" },
+      // body: `Arguments not available\n`
+    };
+  }
   if (!event.body) {
     return {
       statusCode: 422,
@@ -14,7 +22,19 @@ export async function handler(event: APIGatewayEvent) {
   const body = JSON.parse(event.body);
   console.log("Create", body);
   const job = splitToTasks(body, event.requestContext.requestId);
-  const result = submitJob(job);
+  // console.log("Submit", job);
+  const result = await submitJob(job);
+  console.log("Result", result);
+
+  const dynamo = new DynamoDB();
+  const res = await dynamo
+    .putItem({
+      TableName: readEnv("TABLE_NAME"),
+      Item: toItem(result)
+    })
+    .promise();
+  console.log("Dynamo", res);
+
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -29,6 +49,7 @@ async function submitJob(job: Job): Promise<Job> {
   const tasks = [];
 
   for (let task of job.transtype) {
+    console.log("Process task", task);
     let params: Batch.SubmitJobRequest = {
       jobName: task.id,
       jobDefinition: readEnv(`JOB_DEFINITION_${task.transtype}`),
