@@ -1,5 +1,23 @@
 import { Job, Task } from "./types";
 
+export function toStorage(job: Job): any {
+  const copy = JSON.parse(JSON.stringify(job));
+  copy.transtype.forEach((task: any) => {
+    task._status = task.status;
+    delete task.status;
+  });
+  return copy;
+}
+
+export function fromStorage(job: any): Job {
+  const copy = JSON.parse(JSON.stringify(job));
+  copy.transtype.forEach((task: any) => {
+    task.status = task._status;
+    delete task._status;
+  });
+  return copy as Job;
+}
+
 export function readEnv(name: string): string {
   const value = process.env[name];
   if (value) {

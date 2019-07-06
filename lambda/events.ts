@@ -35,7 +35,7 @@ export async function handler(event: any) {
       default:
         throw new Error(`Unrecognized status: ${event.detail.status}`);
     }
-    const update = [`transtype[${taskIndex}].status = :s`];
+    const update = [`transtype[${taskIndex}]._status = :s`];
     const values: Map<string, string> = new Map([[":s", status]]);
     switch (status) {
       case "process":

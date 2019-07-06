@@ -1,7 +1,7 @@
 import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
-import { readEnv } from "./utils";
+import { readEnv, toStorage } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.body) {
@@ -20,7 +20,7 @@ export async function handler(event: APIGatewayEvent) {
     const dynamo = new DynamoDB.DocumentClient();
     const query: DynamoDB.DocumentClient.PutItemInput = {
       TableName: readEnv("TABLE_NAME"),
-      Item: result
+      Item: toStorage(result)
     };
     const res = await dynamo.put(query).promise();
     console.log(res);
