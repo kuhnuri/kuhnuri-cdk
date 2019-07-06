@@ -3,15 +3,6 @@ import { DynamoDB } from "aws-sdk";
 import { readEnv, toObject } from "./utils";
 
 export async function handler(event: any) {
-  console.log(event);
-  // if (!event.pathParameters || event.pathParameters.id === "") {
-  //   return {
-  //     statusCode: 422,
-  //     headers: { "Content-Type": "application/json; charset=utf-8" },
-  //     body: JSON.stringify({ message: "Arguments not available" })
-  //   };
-  // }
-
   try {
     const taskId = event.detail.jobName;
     const [jobId, taskIndex] = taskId.split("_");
@@ -42,12 +33,12 @@ export async function handler(event: any) {
     switch (status) {
       case "process":
         update.push(`transtype[${taskIndex}].processing = :p`);
-        values.set(":p", new Date().toString());
+        values.set(":p", new Date(event.detail.startedAt).toISOString());
         break;
       case "done":
       case "failed":
         update.push(`transtype[${taskIndex}].finished = :f`);
-        values.set(":f", new Date().toString());
+        values.set(":f", new Date(event.detail.stoppedAt).toString());
         break;
     }
 
@@ -66,7 +57,6 @@ export async function handler(event: any) {
     };
     const res = await dynamo.update(query).promise();
 
-    console.log(res);
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json; charset=utf-8" },

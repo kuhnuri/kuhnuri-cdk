@@ -12,19 +12,30 @@ export async function handler(event: APIGatewayEvent) {
   }
 
   try {
+    const jobId = event.pathParameters.id;
+
     const dynamo = new DynamoDB.DocumentClient();
     const query: DynamoDB.DocumentClient.GetItemInput = {
       TableName: readEnv("TABLE_NAME"),
       Key: {
-        id: event.pathParameters.id
+        id: jobId
       }
     };
     const res = await dynamo.get(query).promise();
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(res.Item, undefined, 2)
-    };
+
+    if (res.Item) {
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify(res.Item, undefined, 2)
+      };
+    } else {
+      return {
+        statusCode: 404,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ message: `Job not found: ${jobId}` })
+      };
+    }
   } catch (err) {
     console.error(err);
     return {
