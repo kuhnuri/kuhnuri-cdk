@@ -1,17 +1,9 @@
 import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
-import { toItem } from "./utils";
+import { readEnv } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
-  console.log("request:", JSON.stringify(event, undefined, 2));
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405
-      // headers: { "Content-Type": "text/plain" },
-      // body: `Arguments not available\n`
-    };
-  }
   if (!event.body) {
     return {
       statusCode: 422,
@@ -19,27 +11,33 @@ export async function handler(event: APIGatewayEvent) {
       body: `Arguments not available\n`
     };
   }
-  const body = JSON.parse(event.body);
-  console.log("Create", body);
-  const job = splitToTasks(body, event.requestContext.requestId);
-  // console.log("Submit", job);
-  const result = await submitJob(job);
-  console.log("Result", result);
 
-  const dynamo = new DynamoDB();
-  const res = await dynamo
-    .putItem({
+  try {
+    const body: Create = JSON.parse(event.body);
+    const job = splitToTasks(body, event.requestContext.requestId);
+    const result = await submitJob(job);
+
+    const dynamo = new DynamoDB.DocumentClient();
+    const query = {
       TableName: readEnv("TABLE_NAME"),
-      Item: toItem(result)
-    })
-    .promise();
-  console.log("Dynamo", res);
+      Item: result
+    };
+    const res = await dynamo.put(query).promise();
+    console.log(res);
 
-  return {
-    statusCode: 200,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify(result, undefined, 2)
-  };
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify(result, undefined, 2)
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "text/plain" },
+      body: `Failed to create job: ${err}`
+    };
+  }
 }
 
 async function submitJob(job: Job): Promise<Job> {
@@ -50,13 +48,19 @@ async function submitJob(job: Job): Promise<Job> {
 
   for (let task of job.transtype) {
     console.log("Process task", task);
+    const properties = [`-Dtranstype=${task.transtype}`];
+    if (task.params) {
+      Object.keys(task.params).forEach(key => {
+        properties.push(`"-D${key}=${task.params![key]}"`);
+      });
+    }
     let params: Batch.SubmitJobRequest = {
       jobName: task.id,
       jobDefinition: readEnv(`JOB_DEFINITION_${task.transtype}`),
       jobQueue: readEnv("JOB_QUEUE"),
       dependsOn,
       containerOverrides: {
-        command: [`-Dtranstype=${task.transtype}`],
+        command: properties,
         environment: [
           {
             name: "input",
@@ -76,7 +80,7 @@ async function submitJob(job: Job): Promise<Job> {
     };
 
     const result = await client.submitJob(params).promise();
-    console.log(`Started AWS Batch job ${result.jobId}`);
+    console.log(result.jobId);
 
     dependsOn = [
       {
@@ -126,7 +130,7 @@ export function splitToTasks(body: Create, id: string): Job {
   return {
     id: jobId,
     input: body.input,
-    output: body.output,
+    output: body.output || generateTempUri(jobId),
     transtype: tasks,
     priority: body.priority || 0,
     created: new Date(),
@@ -139,19 +143,6 @@ export function splitToTasks(body: Create, id: string): Job {
   }
 
   function generateTempUri(taskId: string): URI {
-    return `s3:/foo/temp/${taskId}`;
+    return `s3:/${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
   }
 }
-
-function readEnv(name: string): string {
-  const value = process.env[name];
-  if (value) {
-    return value;
-  } else {
-    throw new Error(`Unable to find environment variable ${name}`);
-  }
-}
-
-// GET         /api/v1/jobs               controllers.v1.ListController.list(state: Option[string])
-// POST        /api/v1/job                controllers.v1.ListController.add
-// GET         /api/v1/job/:id            controllers.v1.ListController.details(id)

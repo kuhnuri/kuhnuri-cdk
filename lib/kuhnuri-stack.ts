@@ -244,9 +244,52 @@ export class KuhnuriStack extends cdk.Stack {
       });
     });
     createJob.addEnvironment("TABLE_NAME", jobTable.tableName);
+    createJob.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
 
-    new apigw.LambdaRestApi(stack, "Endpoint", {
-      handler: createJob
+    const queryJobRole = new iam.Role(stack, "QueryJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
     });
+    queryJobRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    // queryJobRole.attachInlinePolicy(
+    //   new iam.Policy(stack, "CreateJobPolicy", {
+    //     statements: [
+    //       new iam.PolicyStatement({
+    //         actions: ["batch:SubmitJob"],
+    //         resources: jobDefinitions
+    //           .map(jobDefinition => jobDefinition.jobDefinition.ref)
+    //           .concat(queue.ref)
+    //       })
+    //     ]
+    //   })
+    // );
+    jobTable.grantReadData(queryJobRole);
+
+    const queryJob = new lambda.Function(stack, "QueryJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("lambda"),
+      handler: "query.handler",
+      role: queryJobRole
+    });
+    queryJob.addEnvironment("TABLE_NAME", jobTable.tableName);
+
+    // API Gateway
+    // ===========
+
+    const rest = new apigw.LambdaRestApi(stack, "Endpoint", {
+      handler: createJob,
+      proxy: false
+    });
+
+    const api = rest.root.addResource("api");
+    const v1 = api.addResource("v1");
+    const job = v1.addResource("job");
+    job.addMethod("POST", new apigw.LambdaIntegration(createJob));
+    const query = job.addResource("{id}");
+    query.addMethod("GET", new apigw.LambdaIntegration(queryJob));
+    // GET         /api/v1/jobs               controllers.v1.ListController.list(state: Option[string])
   }
 }

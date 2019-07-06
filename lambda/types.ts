@@ -5,10 +5,10 @@ export type Status = "queue" | "process" | "done" | "error";
 export type Create = {
   id?: string;
   input: URI;
-  output: URI;
+  output?: URI;
   transtype: string[];
   priority?: number;
-  params: Record<string, string>;
+  params?: Record<string, string>;
 };
 
 export type Task = {
@@ -17,7 +17,7 @@ export type Task = {
   input?: URI;
   output?: URI;
   transtype: string;
-  params: Record<string, string>;
+  params?: Record<string, string>;
   status: Status;
   processing?: Date;
   worker?: string;

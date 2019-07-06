@@ -1,5 +1,14 @@
 import { Job, Task } from "./types";
 
+export function readEnv(name: string): string {
+  const value = process.env[name];
+  if (value) {
+    return value;
+  } else {
+    throw new Error(`Unable to find environment variable ${name}`);
+  }
+}
+
 export function toItem(job: Job) {
   return {
     id: {

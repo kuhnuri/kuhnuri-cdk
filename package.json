@@ -18,24 +18,24 @@
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.0.10",
     "@types/uuid": "^3.4.5",
-    "aws-cdk": "^0.36.2",
+    "aws-cdk": "^0.37.0",
     "mocha": "^6.1.4",
     "ts-node": "^8.1.0",
     "typescript": "^3.3.3333"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigateway": "^0.36.2",
-    "@aws-cdk/aws-batch": "^0.36.2",
-    "@aws-cdk/aws-dynamodb": "^0.36.2",
-    "@aws-cdk/aws-ec2": "^0.36.2",
-    "@aws-cdk/aws-ecr": "^0.36.2",
-    "@aws-cdk/aws-ecr-assets": "^0.36.2",
-    "@aws-cdk/aws-iam": "^0.36.2",
-    "@aws-cdk/aws-lambda": "^0.36.2",
-    "@aws-cdk/aws-s3": "^0.36.2",
-    "@aws-cdk/aws-sns": "^0.36.2",
-    "@aws-cdk/aws-sns-subscriptions": "^0.36.2",
-    "@aws-cdk/aws-sqs": "^0.36.2",
-    "@aws-cdk/core": "^0.36.2"
+    "@aws-cdk/aws-apigateway": "^0.37.0",
+    "@aws-cdk/aws-batch": "^0.37.0",
+    "@aws-cdk/aws-dynamodb": "^0.37.0",
+    "@aws-cdk/aws-ec2": "^0.37.0",
+    "@aws-cdk/aws-ecr": "^0.37.0",
+    "@aws-cdk/aws-ecr-assets": "^0.37.0",
+    "@aws-cdk/aws-iam": "^0.37.0",
+    "@aws-cdk/aws-lambda": "^0.37.0",
+    "@aws-cdk/aws-s3": "^0.37.0",
+    "@aws-cdk/aws-sns": "^0.37.0",
+    "@aws-cdk/aws-sns-subscriptions": "^0.37.0",
+    "@aws-cdk/aws-sqs": "^0.37.0",
+    "@aws-cdk/core": "^0.37.0"
   }
 }
