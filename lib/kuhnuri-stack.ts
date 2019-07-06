@@ -7,6 +7,8 @@ import batch = require("@aws-cdk/aws-batch");
 import ec2 = require("@aws-cdk/aws-ec2");
 import s3 = require("@aws-cdk/aws-s3");
 import dynamodb = require("@aws-cdk/aws-dynamodb");
+import events = require("@aws-cdk/aws-events");
+import targets = require("@aws-cdk/aws-events-targets");
 import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
 import conf from "../config";
@@ -187,6 +189,13 @@ export class KuhnuriStack extends cdk.Stack {
       priority: 0
     });
 
+    const event = new events.Rule(stack, "BatchEvent", {
+      enabled: true,
+      eventPattern: {
+        source: ["aws.batch"]
+      }
+    });
+
     // S3
     // ==
 
@@ -286,6 +295,25 @@ export class KuhnuriStack extends cdk.Stack {
       role: queryJobRole
     });
     queryJob.addEnvironment("TABLE_NAME", jobTable.tableName);
+
+    const eventJobRole = new iam.Role(stack, "EventJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
+    });
+    eventJobRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    jobTable.grantReadData(eventJobRole);
+
+    const eventJob = new lambda.Function(stack, "eventJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("lambda"),
+      handler: "events.handler",
+      role: queryJobRole
+    });
+    eventJob.addEnvironment("TABLE_NAME", jobTable.tableName);
+    event.addTarget(new targets.LambdaFunction(eventJob));
 
     // API Gateway
     // ===========

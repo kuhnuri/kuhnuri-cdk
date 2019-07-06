@@ -13,11 +13,11 @@ export async function handler(event: APIGatewayEvent) {
 
   try {
     const dynamo = new DynamoDB.DocumentClient();
-    const query: DynamoDB.GetItemInput = {
+    const query: DynamoDB.DocumentClient.GetItemInput = {
       TableName: readEnv("TABLE_NAME"),
       Key: {
         id: event.pathParameters.id
-      } as any
+      }
     };
     const res = await dynamo.get(query).promise();
     return {

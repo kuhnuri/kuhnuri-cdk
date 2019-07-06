@@ -18,7 +18,7 @@ export async function handler(event: APIGatewayEvent) {
     const result = await submitJob(job);
 
     const dynamo = new DynamoDB.DocumentClient();
-    const query = {
+    const query: DynamoDB.DocumentClient.PutItemInput = {
       TableName: readEnv("TABLE_NAME"),
       Item: result
     };

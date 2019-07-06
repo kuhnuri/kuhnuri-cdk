@@ -9,6 +9,14 @@ export function readEnv(name: string): string {
   }
 }
 
+export function toObject(map: Map<string, string>) {
+  const res = {} as any;
+  map.forEach((v, k) => {
+    res[k] = v;
+  });
+  return res;
+}
+
 export function toItem(job: Job) {
   return {
     id: {
