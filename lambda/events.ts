@@ -35,8 +35,10 @@ export async function handler(event: any) {
       default:
         throw new Error(`Unrecognized status: ${event.detail.status}`);
     }
-    const update = [`transtype[${taskIndex}]._status = :s`];
-    const values: Map<string, string> = new Map([[":s", status]]);
+    const update = [];
+    const values = new Map();
+    update.push(`transtype[${taskIndex}].#s = :s`);
+    values.set(":s", status);
     switch (status) {
       case "process":
         update.push(`transtype[${taskIndex}].processing = :p`);
@@ -57,6 +59,9 @@ export async function handler(event: any) {
       },
       UpdateExpression: `SET ${update.join(", ")}`,
       ExpressionAttributeValues: toObject(values),
+      ExpressionAttributeNames: {
+        "#s": "status"
+      },
       ReturnValues: "UPDATED_NEW"
     };
     const res = await dynamo.update(query).promise();

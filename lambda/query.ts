@@ -1,6 +1,6 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { DynamoDB } from "aws-sdk";
-import { readEnv, fromStorage } from "./utils";
+import { readEnv } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.pathParameters || event.pathParameters.id === "") {
@@ -23,7 +23,7 @@ export async function handler(event: APIGatewayEvent) {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(fromStorage(res.Item), undefined, 2)
+      body: JSON.stringify(res.Item, undefined, 2)
     };
   } catch (err) {
     console.error(err);

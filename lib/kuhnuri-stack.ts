@@ -189,7 +189,7 @@ export class KuhnuriStack extends cdk.Stack {
       priority: 0
     });
 
-    const event = new events.Rule(stack, "BatchEvent", {
+    const batchEvent = new events.Rule(stack, "BatchEvent", {
       enabled: true,
       eventPattern: {
         source: ["aws.batch"]
@@ -225,15 +225,17 @@ export class KuhnuriStack extends cdk.Stack {
     // Lambda
     // ======
 
-    const createJobRole = new iam.Role(stack, "CreateJobRole", {
+    // Create
+
+    const createLambdaRole = new iam.Role(stack, "CreateJobRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
     });
-    createJobRole.addManagedPolicy(
+    createLambdaRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName(
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    createJobRole.attachInlinePolicy(
+    createLambdaRole.attachInlinePolicy(
       new iam.Policy(stack, "CreateJobPolicy", {
         statements: [
           new iam.PolicyStatement({
@@ -245,90 +247,82 @@ export class KuhnuriStack extends cdk.Stack {
         ]
       })
     );
-    jobTable.grantWriteData(createJobRole);
+    jobTable.grantWriteData(createLambdaRole);
 
-    const createJob = new lambda.Function(stack, "CreateJobHandler", {
+    const createLambda = new lambda.Function(stack, "CreateJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
       code: lambda.Code.asset("lambda"),
       handler: "create.handler",
-      role: createJobRole
+      role: createLambdaRole
     });
-    createJob.addEnvironment("JOB_QUEUE", queue.ref);
+    createLambda.addEnvironment("JOB_QUEUE", queue.ref);
     jobDefinitions.forEach(jobDefinition => {
       jobDefinition.transtypes.forEach(transtype => {
-        createJob.addEnvironment(
+        createLambda.addEnvironment(
           `JOB_DEFINITION_${transtype}`,
           jobDefinition.jobDefinition.ref
         );
       });
     });
-    createJob.addEnvironment("TABLE_NAME", jobTable.tableName);
-    createJob.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
-    createJob.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
+    createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
+    createLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
+    createLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
 
-    const queryJobRole = new iam.Role(stack, "QueryJobRole", {
+    // Read
+
+    const queryLambdaRole = new iam.Role(stack, "QueryJobRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
     });
-    queryJobRole.addManagedPolicy(
+    queryLambdaRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName(
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    // queryJobRole.attachInlinePolicy(
-    //   new iam.Policy(stack, "CreateJobPolicy", {
-    //     statements: [
-    //       new iam.PolicyStatement({
-    //         actions: ["batch:SubmitJob"],
-    //         resources: jobDefinitions
-    //           .map(jobDefinition => jobDefinition.jobDefinition.ref)
-    //           .concat(queue.ref)
-    //       })
-    //     ]
-    //   })
-    // );
-    jobTable.grantReadData(queryJobRole);
+    jobTable.grantReadData(queryLambdaRole);
 
-    const queryJob = new lambda.Function(stack, "QueryJobHandler", {
+    const queryLambda = new lambda.Function(stack, "QueryJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
       code: lambda.Code.asset("lambda"),
       handler: "query.handler",
-      role: queryJobRole
+      role: queryLambdaRole
     });
-    queryJob.addEnvironment("TABLE_NAME", jobTable.tableName);
+    queryLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
 
-    const eventJobRole = new iam.Role(stack, "EventJobRole", {
+    // Event
+
+    const eventLambdaRole = new iam.Role(stack, "EventJobRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
     });
-    eventJobRole.addManagedPolicy(
+    eventLambdaRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName(
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    jobTable.grantReadData(eventJobRole);
+    jobTable.grantWriteData(eventLambdaRole);
 
-    const eventJob = new lambda.Function(stack, "eventJobHandler", {
+    const eventLambda = new lambda.Function(stack, "EventJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
       code: lambda.Code.asset("lambda"),
       handler: "events.handler",
-      role: queryJobRole
+      role: eventLambdaRole
     });
-    eventJob.addEnvironment("TABLE_NAME", jobTable.tableName);
-    event.addTarget(new targets.LambdaFunction(eventJob));
+    eventLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
+    batchEvent.addTarget(new targets.LambdaFunction(eventLambda));
 
     // API Gateway
     // ===========
 
     const rest = new apigw.LambdaRestApi(stack, "Endpoint", {
-      handler: createJob,
+      handler: createLambda,
       proxy: false
     });
 
     const api = rest.root.addResource("api");
     const v1 = api.addResource("v1");
     const job = v1.addResource("job");
-    job.addMethod("POST", new apigw.LambdaIntegration(createJob));
+    job.addMethod("POST", new apigw.LambdaIntegration(createLambda));
     const query = job.addResource("{id}");
-    query.addMethod("GET", new apigw.LambdaIntegration(queryJob));
+    query.addMethod("GET", new apigw.LambdaIntegration(queryLambda));
     // GET         /api/v1/jobs               controllers.v1.ListController.list(state: Option[string])
   }
 }
