@@ -190,8 +190,18 @@ export class KuhnuriStack extends cdk.Stack {
     // S3
     // ==
 
-    const bucketTemp = new s3.Bucket(stack, "bucketTemp", {});
+    const bucketTemp = new s3.Bucket(stack, "BucketTemp", {
+      lifecycleRules: [
+        {
+          enabled: true,
+          expiration: cdk.Duration.days(1)
+        }
+      ]
+    });
     bucketTemp.grantReadWrite(batchInstanceRole);
+
+    const bucketOutput = new s3.Bucket(stack, "BucketOutput", {});
+    bucketOutput.grantReadWrite(batchInstanceRole);
 
     // DynamoDB
     // ========
@@ -245,6 +255,7 @@ export class KuhnuriStack extends cdk.Stack {
     });
     createJob.addEnvironment("TABLE_NAME", jobTable.tableName);
     createJob.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
+    createJob.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
 
     const queryJobRole = new iam.Role(stack, "QueryJobRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")

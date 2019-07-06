@@ -6,8 +6,8 @@ export async function handler(event: APIGatewayEvent) {
   if (!event.pathParameters || event.pathParameters.id === "") {
     return {
       statusCode: 422,
-      headers: { "Content-Type": "text/plain" },
-      body: `Arguments not available`
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message: "Arguments not available" })
     };
   }
 
@@ -29,8 +29,8 @@ export async function handler(event: APIGatewayEvent) {
     console.error(err);
     return {
       statusCode: 500,
-      headers: { "Content-Type": "text/plain" },
-      body: `Failed to query job state: ${err}`
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message: `Failed to query job state: ${err}` })
     };
   }
 }

@@ -7,8 +7,8 @@ export async function handler(event: APIGatewayEvent) {
   if (!event.body) {
     return {
       statusCode: 422,
-      headers: { "Content-Type": "text/plain" },
-      body: `Arguments not available\n`
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message: "Arguments not available" })
     };
   }
 
@@ -34,8 +34,8 @@ export async function handler(event: APIGatewayEvent) {
     console.error(err);
     return {
       statusCode: 500,
-      headers: { "Content-Type": "text/plain" },
-      body: `Failed to create job: ${err}`
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message: `Failed to create job: ${err}` })
     };
   }
 }
@@ -110,18 +110,20 @@ export function splitToTasks(body: Create, id: string): Job {
     [] as string[]
   );
   const jobId = body.id || id;
+  const output = body.output || generateOutputUri(jobId);
   const tasks = transtypes.map((transtype, i) => {
     const isFirst = i === 0;
     const isLast = i === transtypes.length - 1;
     const taskId = generateTaskId(i);
+    const prevTaskId = generateTaskId(i - 1);
     return {
       id: taskId,
       job: jobId,
       transtype,
       params: body.params,
       status: "queue",
-      input: isFirst ? body.input : generateTempUri(generateTaskId(i - 1)),
-      output: isLast ? body.output : generateTempUri(generateTaskId(i))
+      input: isFirst ? body.input : generateTempUri(prevTaskId),
+      output: isLast ? output : generateTempUri(taskId)
       // processing?: Date;
       // worker?: string;
       // finished?: Date;
@@ -144,5 +146,9 @@ export function splitToTasks(body: Create, id: string): Job {
 
   function generateTempUri(taskId: string): URI {
     return `s3:/${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
+  }
+
+  function generateOutputUri(taskId: string): URI {
+    return `s3:/${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
   }
 }
