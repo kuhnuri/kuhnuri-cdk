@@ -272,6 +272,50 @@ export class KuhnuriStack extends cdk.Stack {
       JSON.stringify(conf.transtypes)
     );
 
+    // Upload
+
+    const uploadLambdaRole = new iam.Role(stack, "UploadJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
+    });
+    uploadLambdaRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    // uploadLambdaRole.attachInlinePolicy(
+    //   new iam.Policy(stack, "UploadJobPolicy", {
+    //     statements: [
+    //       new iam.PolicyStatement({
+    //         actions: ["batch:SubmitJob"],
+    //         resources: jobDefinitions
+    //           .map(jobDefinition => jobDefinition.jobDefinition.ref)
+    //           .concat(queue.ref)
+    //       })
+    //     ]
+    //   })
+    // );
+    // jobTable.grantWriteData(uploadLambdaRole);
+    bucketTemp.grantPut(uploadLambdaRole);
+
+    const uploadLambda = new lambda.Function(stack, "UploadJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("dist"),
+      handler: "upload.handler",
+      role: uploadLambdaRole
+    });
+    // uploadLambda.addEnvironment("JOB_QUEUE", queue.ref);
+    // jobDefinitions.forEach(jobDefinition => {
+    //   jobDefinition.transtypes.forEach(transtype => {
+    //     uploadLambda.addEnvironment(
+    //       `JOB_DEFINITION_${transtype}`,
+    //       jobDefinition.jobDefinition.ref
+    //     );
+    //   });
+    // });
+    // uploadLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
+    uploadLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
+    // uploadLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
+
     // Read
 
     const queryLambdaRole = new iam.Role(stack, "QueryJobRole", {
@@ -327,6 +371,8 @@ export class KuhnuriStack extends cdk.Stack {
     job.addMethod("POST", new apigw.LambdaIntegration(createLambda));
     const query = job.addResource("{id}");
     query.addMethod("GET", new apigw.LambdaIntegration(queryLambda));
+    const upload = v1.addResource("upload");
+    upload.addMethod("GET", new apigw.LambdaIntegration(uploadLambda));
     // GET         /api/v1/jobs               controllers.v1.ListController.list(state: Option[string])
   }
 }
