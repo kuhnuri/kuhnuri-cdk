@@ -251,7 +251,7 @@ export class KuhnuriStack extends cdk.Stack {
 
     const createLambda = new lambda.Function(stack, "CreateJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
-      code: lambda.Code.asset("lambda"),
+      code: lambda.Code.asset("dist"),
       handler: "create.handler",
       role: createLambdaRole
     });
@@ -282,7 +282,7 @@ export class KuhnuriStack extends cdk.Stack {
 
     const queryLambda = new lambda.Function(stack, "QueryJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
-      code: lambda.Code.asset("lambda"),
+      code: lambda.Code.asset("dist"),
       handler: "query.handler",
       role: queryLambdaRole
     });
@@ -302,7 +302,7 @@ export class KuhnuriStack extends cdk.Stack {
 
     const eventLambda = new lambda.Function(stack, "EventJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,
-      code: lambda.Code.asset("lambda"),
+      code: lambda.Code.asset("dist"),
       handler: "events.handler",
       role: eventLambdaRole
     });
