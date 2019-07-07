@@ -42,7 +42,7 @@ export class KuhnuriStack extends cdk.Stack {
           }
         }
         fs.writeFileSync(`${dir}/Dockerfile`, lines.join("\n"));
-        asset = new DockerImageAsset(this, `DitaOtImage_${i}`, {
+        asset = new DockerImageAsset(stack, `DitaOtImage_${i}`, {
           directory: dir
         });
       }
@@ -117,7 +117,7 @@ export class KuhnuriStack extends cdk.Stack {
     });
 
     const computeEnvironment = new batch.CfnComputeEnvironment(
-      this,
+      stack,
       "DitaOtComputeEnvironment",
       {
         serviceRole: batchExecutionRole.roleArn,
@@ -215,7 +215,7 @@ export class KuhnuriStack extends cdk.Stack {
     // DynamoDB
     // ========
 
-    const jobTable = new dynamodb.Table(this, "Job", {
+    const jobTable = new dynamodb.Table(stack, "Job", {
       partitionKey: {
         name: "id",
         type: dynamodb.AttributeType.STRING

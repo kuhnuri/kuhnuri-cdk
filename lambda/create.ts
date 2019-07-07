@@ -13,20 +13,22 @@ export async function handler(event: APIGatewayEvent) {
     const body: Create = JSON.parse(event.body);
     const job = splitToTasks(body, event.requestContext.requestId);
     const result = await submitJob(job);
-
-    const dynamo = new DynamoDB.DocumentClient();
-    const query: DynamoDB.DocumentClient.PutItemInput = {
-      TableName: readEnv("TABLE_NAME"),
-      Item: result
-    };
-    const res = await dynamo.put(query).promise();
-    // console.log(res);
-
+    store(result);
     return response(200, result);
   } catch (err) {
     console.error(err);
     return error(500, `Failed to create job: ${err}`);
   }
+}
+
+async function store(result: Job) {
+  const dynamo = new DynamoDB.DocumentClient();
+  const query: DynamoDB.DocumentClient.PutItemInput = {
+    TableName: readEnv("TABLE_NAME"),
+    Item: result
+  };
+  const res = await dynamo.put(query).promise();
+  // console.log(res);
 }
 
 async function submitJob(job: Job): Promise<Job> {
@@ -128,12 +130,12 @@ export function splitToTasks(body: Create, id: string): Job {
   function generateTaskId(i: number): string {
     return `${jobId}_${i}`;
   }
+}
 
-  function generateTempUri(taskId: string): URI {
-    return `s3:/${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
-  }
+function generateTempUri(taskId: string): URI {
+  return `s3:/${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
+}
 
-  function generateOutputUri(taskId: string): URI {
-    return `s3:/${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
-  }
+function generateOutputUri(taskId: string): URI {
+  return `s3:/${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
 }
