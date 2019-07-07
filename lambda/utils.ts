@@ -17,56 +17,18 @@ export function toObject(map: Map<string, string>) {
   return res;
 }
 
-export function toItem(job: Job) {
+export function response(code: number, body: any) {
   return {
-    id: {
-      S: job.id
-    },
-    input: {
-      S: job.input
-    },
-    output: {
-      S: job.output
-    },
-    transtype: {
-      L: job.transtype.map(task => ({
-        M: taskToItem(task)
-      }))
-    },
-    priority: {
-      N: job.priority.toString()
-    },
-    created: {
-      S: job.created.toISOString()
-    },
-    status: {
-      S: job.status
-    }
+    statusCode: code,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(body, undefined, 2)
   };
 }
 
-function taskToItem(task: Task) {
+export function error(code: number, message: string) {
   return {
-    id: {
-      S: task.id
-    },
-    job: {
-      S: task.job
-    },
-    input: {
-      S: task.input
-    },
-    output: {
-      S: task.output
-    },
-    transtype: {
-      S: task.transtype
-    },
-    params: {
-      M: {}
-    },
-    status: {
-      S: task.status
-    }
+    statusCode: code,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({ message })
   };
 }

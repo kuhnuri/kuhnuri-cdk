@@ -1,31 +1,14 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { DynamoDB } from "aws-sdk";
-import { readEnv, toObject } from "./utils";
+import { readEnv, toObject, error, response } from "./utils";
+import { Status } from "./types";
 
 export async function handler(event: any) {
   try {
     const taskId = event.detail.jobName;
     const [jobId, taskIndex] = taskId.split("_");
-    let status;
-    switch (event.detail.status) {
-      case "SUBMITTED":
-      case "PENDING":
-        status = "queue";
-        break;
-      case "RUNNABLE":
-      case "STARTING":
-      case "RUNNING":
-        status = "process";
-        break;
-      case "SUCCEEDED":
-        status = "done";
-        break;
-      case "FAILED":
-        status = "error";
-        break;
-      default:
-        throw new Error(`Unrecognized status: ${event.detail.status}`);
-    }
+    const status = mapStatus(event.detail.status);
+
     const update = [];
     const values = new Map();
     update.push(`transtype[${taskIndex}].#s = :s`);
@@ -36,7 +19,7 @@ export async function handler(event: any) {
         values.set(":p", new Date(event.detail.startedAt).toISOString());
         break;
       case "done":
-      case "failed":
+      case "error":
         update.push(`transtype[${taskIndex}].finished = :f`);
         values.set(":f", new Date(event.detail.stoppedAt).toString());
         break;
@@ -57,17 +40,31 @@ export async function handler(event: any) {
     };
     const res = await dynamo.update(query).promise();
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(res, undefined, 2)
-    };
+    return response(200, res);
   } catch (err) {
     console.error(err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message: `Failed to update job state: ${err}` })
-    };
+    return error(500, `Failed to update job state: ${err}`);
+  }
+}
+
+function mapStatus(status: string): Status {
+  switch (status) {
+    case "SUBMITTED":
+    case "PENDING":
+      return "queue";
+      break;
+    case "RUNNABLE":
+    case "STARTING":
+    case "RUNNING":
+      return "process";
+      break;
+    case "SUCCEEDED":
+      return "done";
+      break;
+    case "FAILED":
+      return "error";
+      break;
+    default:
+      throw new Error(`Unrecognized status: ${status}`);
   }
 }

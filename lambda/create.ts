@@ -1,16 +1,12 @@
 import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
-import { readEnv } from "./utils";
+import { readEnv, error, response } from "./utils";
 import conf from "../config";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.body) {
-    return {
-      statusCode: 422,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message: "Arguments not available" })
-    };
+    return error(422, "Arguments not available");
   }
 
   try {
@@ -24,20 +20,12 @@ export async function handler(event: APIGatewayEvent) {
       Item: result
     };
     const res = await dynamo.put(query).promise();
-    console.log(res);
+    // console.log(res);
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(result, undefined, 2)
-    };
+    return response(200, result);
   } catch (err) {
     console.error(err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message: `Failed to create job: ${err}` })
-    };
+    return error(500, `Failed to create job: ${err}`);
   }
 }
 
@@ -48,7 +36,7 @@ async function submitJob(job: Job): Promise<Job> {
   const tasks = [];
 
   for (let task of job.transtype) {
-    console.log("Process task", task);
+    // console.log("Process task", task);
     const properties = [`-Dtranstype=${task.transtype}`];
     if (task.params) {
       Object.keys(task.params).forEach(key => {
@@ -81,7 +69,7 @@ async function submitJob(job: Job): Promise<Job> {
     };
 
     const result = await client.submitJob(params).promise();
-    console.log(result.jobId);
+    // console.log(result.jobId);
 
     dependsOn = [
       {
@@ -132,7 +120,7 @@ export function splitToTasks(body: Create, id: string): Job {
     output: body.output || generateTempUri(jobId),
     transtype: tasks,
     priority: body.priority || 0,
-    created: new Date(),
+    created: new Date().toISOString(),
     // finished?: Date
     status: "queue"
   };

@@ -1,14 +1,10 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { DynamoDB } from "aws-sdk";
-import { readEnv } from "./utils";
+import { readEnv, error, response } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.pathParameters || event.pathParameters.id === "") {
-    return {
-      statusCode: 422,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message: "Arguments not available" })
-    };
+    return error(422, "Arguments not available");
   }
 
   try {
@@ -24,24 +20,12 @@ export async function handler(event: APIGatewayEvent) {
     const res = await dynamo.get(query).promise();
 
     if (res.Item) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify(res.Item, undefined, 2)
-      };
+      return response(200, res.Item);
     } else {
-      return {
-        statusCode: 404,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ message: `Job not found: ${jobId}` })
-      };
+      return error(404, `Job not found: ${jobId}`);
     }
   } catch (err) {
     console.error(err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ message: `Failed to query job state: ${err}` })
-    };
+    return error(500, `Failed to query job state: ${err}`);
   }
 }

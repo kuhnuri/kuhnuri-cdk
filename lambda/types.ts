@@ -2,6 +2,8 @@ export type URI = string;
 
 export type Status = "queue" | "process" | "done" | "error";
 
+type DateTime = string;
+
 export type Create = {
   id?: string;
   input: URI;
@@ -19,9 +21,9 @@ export type Task = {
   transtype: string;
   params?: Record<string, string>;
   status: Status;
-  processing?: Date;
+  processing?: DateTime;
   worker?: string;
-  finished?: Date;
+  finished?: DateTime;
 };
 
 export type Job = {
@@ -30,7 +32,7 @@ export type Job = {
   output: URI;
   transtype: Task[];
   priority: number;
-  created: Date;
-  finished?: Date;
+  created: DateTime;
+  finished?: DateTime;
   status: Status;
 };
