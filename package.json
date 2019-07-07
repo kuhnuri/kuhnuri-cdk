@@ -9,7 +9,6 @@
     "install": "npm run build",
     "build": "tsc",
     "watch": "tsc -w",
-    "cdk": "cdk",
     "deploy": "npm run build && parcel build --target node --no-source-maps lambda/create.ts lambda/events.ts lambda/query.ts && cdk deploy",
     "test": "mocha"
   },
