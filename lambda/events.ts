@@ -21,7 +21,7 @@ export async function handler(event: any) {
       case "done":
       case "error":
         update.push(`transtype[${taskIndex}].finished = :f`);
-        values.set(":f", new Date(event.detail.stoppedAt).toString());
+        values.set(":f", new Date(event.detail.stoppedAt).toISOString());
         break;
     }
 

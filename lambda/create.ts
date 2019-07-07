@@ -12,7 +12,7 @@ export async function handler(event: APIGatewayEvent) {
     const body: Create = JSON.parse(event.body);
     const job = splitToTasks(body, event.requestContext.requestId);
     const result = await submitJob(job);
-    store(result);
+    await store(result);
     return response(200, result);
   } catch (err) {
     console.error(err);
