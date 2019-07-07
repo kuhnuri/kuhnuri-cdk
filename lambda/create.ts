@@ -2,7 +2,6 @@ import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
 import { readEnv, error, response } from "./utils";
-import conf from "../config";
 
 export async function handler(event: APIGatewayEvent) {
   if (!event.body) {
@@ -92,8 +91,9 @@ async function submitJob(job: Job): Promise<Job> {
 }
 
 export function splitToTasks(body: Create, id: string): Job {
+  const transtypeToTasks = JSON.parse(readEnv("TRANSTYPE_TO_TASK"));
   const transtypes = body.transtype.reduce(
-    (acc, cur) => acc.concat(conf.transtypes[cur] || [cur]),
+    (acc, cur) => acc.concat(transtypeToTasks[cur] || [cur]),
     [] as string[]
   );
   const jobId = body.id || id;

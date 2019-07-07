@@ -1,6 +1,10 @@
 #!/usr/bin/env node
-import cdk = require('@aws-cdk/core');
-import { KuhnuriStack } from '../lib/kuhnuri-stack';
+import { App } from "@aws-cdk/core";
+import { KuhnuriStack } from "../lib/kuhnuri-stack";
+import config from "../config";
 
-const app = new cdk.App();
-new KuhnuriStack(app, 'KuhnuriStack');
+new KuhnuriStack(new App(), "KuhnuriStack", {
+  env: {
+    ...config
+  }
+});

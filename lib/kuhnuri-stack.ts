@@ -9,14 +9,14 @@ import s3 = require("@aws-cdk/aws-s3");
 import dynamodb = require("@aws-cdk/aws-dynamodb");
 import events = require("@aws-cdk/aws-events");
 import targets = require("@aws-cdk/aws-events-targets");
-import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
-import conf from "../config";
+import { Config } from "./types";
 
 export class KuhnuriStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
+    const conf = props.env as Config;
     const stack = this;
 
     const vpc = new ec2.Vpc(stack, "NewVPC", {
@@ -267,6 +267,10 @@ export class KuhnuriStack extends cdk.Stack {
     createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
     createLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
     createLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
+    createLambda.addEnvironment(
+      "TRANSTYPE_TO_TASK",
+      JSON.stringify(conf.transtypes)
+    );
 
     // Read
 

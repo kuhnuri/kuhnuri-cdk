@@ -1,5 +1,6 @@
+import { Environment } from "@aws-cdk/core";
+
 export type Config = {
-  region: string;
   baseImage: string;
   /** Transtypes and how they are split into tasks */
   transtypes: Record<string, string[]>;
@@ -11,4 +12,4 @@ export type Config = {
       plugins: string[];
     }
   ];
-};
+} & Environment;
