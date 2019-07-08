@@ -3,6 +3,10 @@ import { Create, Job } from "../lambda/types";
 const assert = require("assert");
 
 describe("splitToTasks", () => {
+  process.env.TRANSTYPE_TO_TASK = JSON.stringify({ html5: ["html5"] });
+  process.env.S3_TEMP_BUCKET = "foo";
+  process.env.S3_OUTPUT_BUCKET = "temp";
+
   it("should return single task", () => {
     const create: Create = {
       input: "foo",
@@ -27,9 +31,9 @@ describe("splitToTasks", () => {
     assert.equal(job.transtype.length, 2);
     assert.equal(job.transtype[0].transtype, "html5");
     assert.equal(job.transtype[0].input, "foo");
-    assert.equal(job.transtype[0].output, "s3:/foo/temp/guid_0");
+    assert.equal(job.transtype[0].output, "s3://foo/temp/guid_0");
     assert.equal(job.transtype[1].transtype, "upload");
-    assert.equal(job.transtype[1].input, "s3:/foo/temp/guid_0");
+    assert.equal(job.transtype[1].input, "s3://foo/temp/guid_0");
     assert.equal(job.transtype[1].output, "bar");
   });
   it("should return three tasks", () => {
@@ -43,12 +47,12 @@ describe("splitToTasks", () => {
     assert.equal(job.transtype.length, 3);
     assert.equal(job.transtype[0].transtype, "graphics");
     assert.equal(job.transtype[0].input, "foo");
-    assert.equal(job.transtype[0].output, "s3:/foo/temp/guid_0");
+    assert.equal(job.transtype[0].output, "s3://foo/temp/guid_0");
     assert.equal(job.transtype[1].transtype, "html5");
-    assert.equal(job.transtype[1].input, "s3:/foo/temp/guid_0");
-    assert.equal(job.transtype[1].output, "s3:/foo/temp/guid_1");
+    assert.equal(job.transtype[1].input, "s3://foo/temp/guid_0");
+    assert.equal(job.transtype[1].output, "s3://foo/temp/guid_1");
     assert.equal(job.transtype[2].transtype, "upload");
-    assert.equal(job.transtype[2].input, "s3:/foo/temp/guid_1");
+    assert.equal(job.transtype[2].input, "s3://foo/temp/guid_1");
     assert.equal(job.transtype[2].output, "bar");
   });
 });

@@ -133,9 +133,9 @@ export function splitToTasks(body: Create, id: string): Job {
 }
 
 function generateTempUri(taskId: string): URI {
-  return `s3:/${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
+  return `s3://${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
 }
 
 function generateOutputUri(taskId: string): URI {
-  return `s3:/${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
+  return `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
 }
