@@ -4,11 +4,10 @@ import { readEnv, error, response } from "./utils";
 import { Job } from "./types";
 
 export async function handler(event: APIGatewayEvent) {
-  if (!event.pathParameters || event.pathParameters.id === "") {
-    return error(422, "Arguments not available");
-  }
-
   try {
+    if (!event.pathParameters || event.pathParameters.id === "") {
+      return error(422, "Arguments not available");
+    }
     const jobId = event.pathParameters.id;
 
     const dynamo = new DynamoDB.DocumentClient();

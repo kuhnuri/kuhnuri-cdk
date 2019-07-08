@@ -4,11 +4,10 @@ import { Batch, DynamoDB } from "aws-sdk";
 import { readEnv, error, response } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
-  if (!event.body) {
-    return error(422, "Arguments not available");
-  }
-
   try {
+    if (!event.body) {
+      return error(422, "Arguments not available");
+    }
     const body: Create = JSON.parse(event.body);
     const job = splitToTasks(body, event.requestContext.requestId);
     const result = await submitJob(job);
