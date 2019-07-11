@@ -144,6 +144,56 @@ export class KuhnuriStack extends cdk.Stack {
       }
     );
 
+    const spotIamFleetRole = new iam.Role(stack, "AmazonEC2SpotFleetRole", {
+      assumedBy: new iam.ServicePrincipal("spotfleet.amazonaws.com")
+    });
+    spotIamFleetRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AmazonEC2SpotFleetTaggingRole"
+      )
+    );
+    const ec2SpotRole = new iam.CfnServiceLinkedRole(
+      stack,
+      "AWSServiceRoleForEC2Spot",
+      {
+        awsServiceName: "spot.amazonaws.com"
+      }
+    );
+    const ec2SpotFleetRole = new iam.CfnServiceLinkedRole(
+      stack,
+      "AWSServiceRoleForEC2SpotFleet",
+      {
+        awsServiceName: "spotfleet.amazonaws.com"
+      }
+    );
+
+    const computeEnvironmentSpot = new batch.CfnComputeEnvironment(
+      stack,
+      "DitaOtComputeEnvironmentSpot",
+      {
+        serviceRole: batchExecutionRole.roleArn,
+        type: "MANAGED",
+        computeResources: {
+          // bidPercentage: Integer
+          desiredvCpus: 1,
+          // ec2KeyPair: String
+          // imageId: String
+          instanceRole: batchInstanceProfile.ref,
+          instanceTypes: ["optimal"],
+          // launchTemplate:
+          //   LaunchTemplateSpecification
+          maxvCpus: 2,
+          minvCpus: 0,
+          // placementGroup: String
+          securityGroupIds: [securityGroup.securityGroupId],
+          spotIamFleetRole: spotIamFleetRole.roleArn,
+          subnets: vpc.privateSubnets.map(subnet => subnet.subnetId),
+          // tags: Json
+          type: "SPOT"
+        }
+      }
+    );
+
     const jobDefinitions = workers.map((worker, i) => {
       const image = worker.asset ? worker.asset.imageUri : conf.baseImage;
       const jobDefinition = new batch.CfnJobDefinition(
@@ -183,6 +233,16 @@ export class KuhnuriStack extends cdk.Stack {
       computeEnvironmentOrder: [
         {
           computeEnvironment: computeEnvironment.ref,
+          order: 0
+        }
+      ],
+      priority: 0
+    });
+
+    const queueSpot = new batch.CfnJobQueue(stack, "DitaOtJobQueueSpot", {
+      computeEnvironmentOrder: [
+        {
+          computeEnvironment: computeEnvironmentSpot.ref,
           order: 0
         }
       ],
@@ -243,6 +303,7 @@ export class KuhnuriStack extends cdk.Stack {
             resources: jobDefinitions
               .map(jobDefinition => jobDefinition.jobDefinition.ref)
               .concat(queue.ref)
+              .concat(queueSpot.ref)
           })
         ]
       })
@@ -255,7 +316,7 @@ export class KuhnuriStack extends cdk.Stack {
       handler: "create.handler",
       role: createLambdaRole
     });
-    createLambda.addEnvironment("JOB_QUEUE", queue.ref);
+    createLambda.addEnvironment("JOB_QUEUE", queueSpot.ref);
     jobDefinitions.forEach(jobDefinition => {
       jobDefinition.transtypes.forEach(transtype => {
         createLambda.addEnvironment(
