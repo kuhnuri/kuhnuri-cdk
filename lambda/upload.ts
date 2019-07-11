@@ -6,7 +6,7 @@ import { URI } from "./types";
 export async function handler(event: APIGatewayEvent) {
   try {
     const bucket = readEnv("S3_TEMP_BUCKET");
-    const key = event.requestContext.requestId;
+    const key = `upload/${event.requestContext.requestId}`;
     const params = {
       Bucket: bucket,
       Key: key,
@@ -27,5 +27,5 @@ export async function handler(event: APIGatewayEvent) {
 }
 
 function generateTempUri(bucket: string, key: string): URI {
-  return `s3://${bucket}/upload/${key}`;
+  return `s3://${bucket}/${key}`;
 }
