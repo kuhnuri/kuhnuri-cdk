@@ -1,7 +1,7 @@
 import { Create, Job, Task, URI } from "./types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
-import { readEnv, error, response } from "./utils";
+import { readEnv, error, response, jarUri } from "./utils";
 
 export async function handler(event: APIGatewayEvent) {
   try {
@@ -136,5 +136,7 @@ function generateTempUri(taskId: string): URI {
 }
 
 function generateOutputUri(taskId: string): URI {
-  return `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
+  const url = `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}.zip`;
+  return jarUri(url);
+  // return `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
 }

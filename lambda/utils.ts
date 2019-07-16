@@ -32,3 +32,7 @@ export function error(code: number, message: string) {
     body: JSON.stringify({ message })
   };
 }
+
+export function jarUri(url: string, entry?: string) {
+  return entry ? `jar:${url}!/${entry}` : `jar:${url}!/`;
+}
