@@ -1,12 +1,14 @@
-# AWS Batch based DITA-OT
+# AWS based DITA-OT
+
+The **AWS based DITA-OT** is a set of configurations to deploy DITA-OT to be ran in AWS products.
 
 ## Prerequisites
 
-To build and deploy, the following tools are required:
+To build and deploy, the following tools and accounts are required:
 
--  AWS CLI
--  AWS Account and User, with _Programmatic access_ type and `AdministratorAccess` policy
--  Node.js
+- [AWS CLI][aws cli]
+- [Node.js][nodejs]
+- [AWS Account][aws account] and [IAM User][iam] with _Programmatic access_ type and `AdministratorAccess` policy. See [AWS documentation][iam user] for creating an IAM user.
 
 ## Building
 
@@ -16,13 +18,13 @@ npm install
 
 ## Deployment
 
-The first time you deploy an AWS CDK app into an environment, you’ll need to bootstrap CDK:  
+The first time you deploy an AWS CDK app into an environment, you’ll need to [bootstrap CDK][bootstrap]:
 
 ```bash
-npm run cdk bootstrap
+npm run bootstrap
 ```
 
-Deploy AWS Batch based DITA-OT:
+Deploy AWS based DITA-OT:
 
 ```bash
 npm run deploy
@@ -35,3 +37,10 @@ Support this project and others by [@jelovirt](https://github.com/jelovirt) via 
 ## License
 
 AWS Batch based DITA-OT is licensed for use under the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+[aws account]: https://aws.amazon.com/account/
+[aws cli]: https://aws.amazon.com/cli/
+[nodejs]: https://nodejs.org/en/
+[iam]: https://aws.amazon.com/iam/
+[iam user]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html
+[bootstrap]: https://docs.aws.amazon.com/cdk/latest/guide/tools.html#tools_bootstrap
