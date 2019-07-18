@@ -132,11 +132,11 @@ export function splitToTasks(body: Create, id: string): Job {
 }
 
 function generateTempUri(taskId: string): URI {
-  return `s3://${readEnv("S3_TEMP_BUCKET")}/temp/${taskId}`;
+  const url = `s3://${readEnv("S3_TEMP_BUCKET")}/${taskId}.zip`;
+  return jarUri(url);
 }
 
 function generateOutputUri(taskId: string): URI {
   const url = `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}.zip`;
   return jarUri(url);
-  // return `s3://${readEnv("S3_OUTPUT_BUCKET")}/${taskId}`;
 }
