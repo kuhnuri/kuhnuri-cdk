@@ -10,7 +10,7 @@ import dynamodb = require("@aws-cdk/aws-dynamodb");
 import events = require("@aws-cdk/aws-events");
 import targets = require("@aws-cdk/aws-events-targets");
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
-import { Config } from "./types";
+import { Config, DitaWorker } from "./types";
 
 export class KuhnuriStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
@@ -29,9 +29,10 @@ export class KuhnuriStack extends cdk.Stack {
 
     const workers = conf.workers.map((worker, i) => {
       let asset;
-      if (worker.plugins && worker.plugins.length !== 0) {
-        const lines = [`FROM ${conf.baseImage}`].concat(
-          worker.plugins.map(plugin => `RUN dita --install ${plugin}`)
+      const plugins = (worker as DitaWorker).plugins || [];
+      if (plugins.length !== 0) {
+        const lines = [`FROM ${worker.image}`].concat(
+          plugins.map(plugin => `RUN dita --install ${plugin}`)
         );
         const dir = `build/docker/${i}`;
         try {
@@ -182,7 +183,7 @@ export class KuhnuriStack extends cdk.Stack {
     });
 
     const jobDefinitions = workers.map((worker, i) => {
-      const image = worker.asset ? worker.asset.imageUri : conf.baseImage;
+      const image = worker.asset ? worker.asset.imageUri : worker.image;
       const jobDefinition = new batch.CfnJobDefinition(
         stack,
         `DitaOtJobDefinition_${i}`,
