@@ -11,7 +11,11 @@ export default {
   },
   workers: [
     {
-      transtypes: ["html5", "fo"],
+      transtypes: ["html5"],
+      image: "jelovirt/kuhnuri_batch_worker:3.2"
+    },
+    {
+      transtypes: ["fo"],
       image: "jelovirt/kuhnuri_batch_worker:3.2",
       plugins: ["com.elovirta.fo"]
     },
