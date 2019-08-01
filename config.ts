@@ -1,12 +1,13 @@
 import { Config } from "./lib/types";
 
 export default {
-  region: "eu-west-1",
-  // baseImage: "jelovirt/kuhnuri_batch_worker:3.2",
+  region: process.env.CDK_DEFAULT_REGION,
+  account: process.env.CDK_DEFAULT_ACCOUNT,
   transtypes: {
     html5: ["html5"],
     pdf2: ["fo", "fo2pdf"],
-    fo: ["fo"]
+    fo: ["fo"],
+    graphics: ["graphics"]
   },
   workers: [
     {
@@ -17,6 +18,10 @@ export default {
     {
       transtypes: ["fo2pdf"],
       image: "jelovirt/kuhnuri_batch_fop_worker:3.2"
+    },
+    {
+      transtypes: ["graphics"],
+      image: "jelovirt/kuhnuri_batch_graphics_worker:3.2"
     }
   ],
   environments: [

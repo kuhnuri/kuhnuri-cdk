@@ -19,10 +19,19 @@ export class KuhnuriStack extends cdk.Stack {
     const conf = props.env as Config;
     const stack = this;
 
-    const vpc = new ec2.Vpc(stack, "NewVPC", {
-      cidr: "10.0.0.0/16",
-      natGateways: 1
-    });
+    let vpc: ec2.IVpc;
+    if (false) {
+      vpc = new ec2.Vpc(stack, "NewVPC", {
+        cidr: "10.0.0.0/16",
+        natGateways: 1
+      });
+    } else {
+      vpc = ec2.Vpc.fromLookup(stack, "defaultVPC", {
+        isDefault: true
+      });
+    }
+    const subnets =
+      vpc.privateSubnets.length !== 0 ? vpc.privateSubnets : vpc.publicSubnets;
 
     // ECR
     // ===
@@ -121,20 +130,20 @@ export class KuhnuriStack extends cdk.Stack {
         "service-role/AmazonEC2SpotFleetTaggingRole"
       )
     );
-    const ec2SpotRole = new iam.CfnServiceLinkedRole(
-      stack,
-      "AWSServiceRoleForEC2Spot",
-      {
-        awsServiceName: "spot.amazonaws.com"
-      }
-    );
-    const ec2SpotFleetRole = new iam.CfnServiceLinkedRole(
-      stack,
-      "AWSServiceRoleForEC2SpotFleet",
-      {
-        awsServiceName: "spotfleet.amazonaws.com"
-      }
-    );
+    // const ec2SpotRole = new iam.CfnServiceLinkedRole(
+    //   stack,
+    //   "AWSServiceRoleForEC2Spot",
+    //   {
+    //     awsServiceName: "spot.amazonaws.com"
+    //   }
+    // );
+    // const ec2SpotFleetRole = new iam.CfnServiceLinkedRole(
+    //   stack,
+    //   "AWSServiceRoleForEC2SpotFleet",
+    //   {
+    //     awsServiceName: "spotfleet.amazonaws.com"
+    //   }
+    // );
 
     const securityGroup = new ec2.SecurityGroup(stack, "BatchSecurityGroup", {
       vpc
@@ -163,7 +172,7 @@ export class KuhnuriStack extends cdk.Stack {
               environment.type === "SPOT"
                 ? spotIamFleetRole.roleArn
                 : undefined,
-            subnets: vpc.privateSubnets.map(subnet => subnet.subnetId),
+            subnets: subnets.map(subnet => subnet.subnetId),
             // tags: Json
             type: environment.type
           }
@@ -196,6 +205,10 @@ export class KuhnuriStack extends cdk.Stack {
             environment: [
               {
                 name: "AWS_DEFAULT_REGION",
+                value: conf.region
+              },
+              {
+                name: "AWS_REGION",
                 value: conf.region
               }
             ],
