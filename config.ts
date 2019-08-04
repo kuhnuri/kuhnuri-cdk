@@ -6,6 +6,7 @@ export default {
   transtypes: {
     html5: ["html5"],
     pdf2: ["fo", "fo2pdf"],
+    html2pdf: ["html5", "html2pdf"],
     fo: ["fo"],
     graphics: ["graphics"]
   },
@@ -26,6 +27,10 @@ export default {
     {
       transtypes: ["graphics"],
       image: "jelovirt/kuhnuri_batch_graphics_worker:3.2"
+    },
+    {
+      transtypes: ["html2pdf"],
+      image: "jelovirt/kuhnuri_batch_weasyprint_worker:3.2"
     }
   ],
   environments: [

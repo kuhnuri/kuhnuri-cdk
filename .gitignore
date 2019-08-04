@@ -10,3 +10,5 @@ cdk.out
 build
 .cache
 dist
+
+env.sh
