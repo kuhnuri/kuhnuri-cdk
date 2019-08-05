@@ -5,9 +5,8 @@ export default {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   transtypes: {
     html5: ["html5"],
-    pdf2: ["fo", "fo2pdf"],
-    html2pdf: ["html5", "html2pdf"],
-    fo: ["fo"],
+    pdf2: ["fo", "fop"],
+    html2pdf: ["html2pdf", "weasyprint"],
     graphics: ["graphics"]
   },
   workers: [
@@ -16,12 +15,15 @@ export default {
       image: "jelovirt/kuhnuri_batch_worker:3.2"
     },
     {
-      transtypes: ["fo"],
+      transtypes: ["fo", "html2pdf"],
       image: "jelovirt/kuhnuri_batch_worker:3.2",
-      plugins: ["com.elovirta.fo"]
+      plugins: [
+        "com.elovirta.fo",
+        "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
+      ]
     },
     {
-      transtypes: ["fo2pdf"],
+      transtypes: ["fop"],
       image: "jelovirt/kuhnuri_batch_fop_worker:3.2"
     },
     {
@@ -29,7 +31,7 @@ export default {
       image: "jelovirt/kuhnuri_batch_graphics_worker:3.2"
     },
     {
-      transtypes: ["html2pdf"],
+      transtypes: ["weasyprint"],
       image: "jelovirt/kuhnuri_batch_weasyprint_worker:3.2"
     }
   ],
