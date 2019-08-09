@@ -36,3 +36,12 @@ export type Job = {
   finished?: DateTime;
   status: Status;
 };
+
+export type Upload = {
+  upload: string;
+  url: string;
+};
+
+export type Download = {
+  url: string;
+};

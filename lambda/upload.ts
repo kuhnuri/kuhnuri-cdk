@@ -1,7 +1,7 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { S3 } from "aws-sdk";
 import { readEnv, error, response } from "./utils";
-import { URI } from "./types";
+import { URI, Upload } from "./types";
 
 export async function handler(event: APIGatewayEvent) {
   try {
@@ -16,10 +16,11 @@ export async function handler(event: APIGatewayEvent) {
     const client = new S3({ signatureVersion: "v4" });
     const signedUrl = client.getSignedUrl("putObject", params);
 
-    return response(200, {
+    const data: Upload = {
       upload: signedUrl,
       url: generateTempUri(bucket, key)
-    });
+    };
+    return response(200, data);
   } catch (err) {
     console.error(err);
     return error(500, `Failed to create upload: ${err}`);

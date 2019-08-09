@@ -323,19 +323,7 @@ export class KuhnuriStack extends cdk.Stack {
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    // uploadLambdaRole.attachInlinePolicy(
-    //   new iam.Policy(stack, "UploadJobPolicy", {
-    //     statements: [
-    //       new iam.PolicyStatement({
-    //         actions: ["batch:SubmitJob"],
-    //         resources: jobDefinitions
-    //           .map(jobDefinition => jobDefinition.jobDefinition.ref)
-    //           .concat(queue.ref)
-    //       })
-    //     ]
-    //   })
-    // );
-    // jobTable.grantWriteData(uploadLambdaRole);
+
     bucketTemp.grantPut(uploadLambdaRole);
 
     const uploadLambda = new lambda.Function(stack, "UploadJobHandler", {
@@ -344,18 +332,27 @@ export class KuhnuriStack extends cdk.Stack {
       handler: "upload.handler",
       role: uploadLambdaRole
     });
-    // uploadLambda.addEnvironment("JOB_QUEUE", queue.ref);
-    // jobDefinitions.forEach(jobDefinition => {
-    //   jobDefinition.transtypes.forEach(transtype => {
-    //     uploadLambda.addEnvironment(
-    //       `JOB_DEFINITION_${transtype}`,
-    //       jobDefinition.jobDefinition.ref
-    //     );
-    //   });
-    // });
-    // uploadLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
     uploadLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
-    // uploadLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
+
+    // Download
+
+    const downloadLambdaRole = new iam.Role(stack, "DownloadJobRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com")
+    });
+    downloadLambdaRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    bucketOutput.grantPut(downloadLambdaRole);
+
+    const downloadLambda = new lambda.Function(stack, "DownloadJobHandler", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.asset("dist"),
+      handler: "download.handler",
+      role: downloadLambdaRole
+    });
+    downloadLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
 
     // Read
 
@@ -414,6 +411,9 @@ export class KuhnuriStack extends cdk.Stack {
     query.addMethod("GET", new apigw.LambdaIntegration(queryLambda));
     const upload = v1.addResource("upload");
     upload.addMethod("GET", new apigw.LambdaIntegration(uploadLambda));
+    const download = v1.addResource("download");
+    const downloadId = download.addResource("{id}");
+    downloadId.addMethod("GET", new apigw.LambdaIntegration(downloadLambda));
     // GET         /api/v1/jobs               controllers.v1.ListController.list(state: Option[string])
   }
 }

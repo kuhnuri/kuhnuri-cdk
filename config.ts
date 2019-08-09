@@ -7,7 +7,8 @@ export default {
     html5: ["html5"],
     pdf2: ["fo", "fop"],
     html2pdf: ["html2pdf", "weasyprint"],
-    graphics: ["graphics"]
+    // graphics: ["graphics"],
+    docx: ["graphics", "docx"]
   },
   workers: [
     {
@@ -15,10 +16,11 @@ export default {
       image: "jelovirt/kuhnuri_batch_worker:3.2"
     },
     {
-      transtypes: ["fo", "html2pdf"],
+      transtypes: ["fo", "html2pdf", "docx"],
       image: "jelovirt/kuhnuri_batch_worker:3.2",
       plugins: [
         "com.elovirta.fo",
+        "com.elovirta.ooxml",
         "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
       ]
     },
