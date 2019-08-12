@@ -323,7 +323,6 @@ export class KuhnuriStack extends cdk.Stack {
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-
     bucketTemp.grantPut(uploadLambdaRole);
 
     const uploadLambda = new lambda.Function(stack, "UploadJobHandler", {
@@ -344,7 +343,9 @@ export class KuhnuriStack extends cdk.Stack {
         "service-role/AWSLambdaBasicExecutionRole"
       )
     );
-    bucketOutput.grantPut(downloadLambdaRole);
+    jobTable.grantReadData(downloadLambdaRole);
+    bucketOutput.grantRead(downloadLambdaRole);
+    bucketTemp.grantRead(downloadLambdaRole);
 
     const downloadLambda = new lambda.Function(stack, "DownloadJobHandler", {
       runtime: lambda.Runtime.NODEJS_10_X,

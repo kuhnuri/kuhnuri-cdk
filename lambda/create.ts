@@ -118,7 +118,7 @@ export function splitToTasks(body: Create, id: string): Job {
   return {
     id: jobId,
     input: body.input,
-    output: body.output || generateTempUri(jobId),
+    output: output,
     transtype: tasks,
     priority: body.priority || 0,
     created: new Date().toISOString(),
