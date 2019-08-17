@@ -1,6 +1,6 @@
 # AWS based DITA-OT
 
-The **AWS based DITA-OT** is a set of configurations to deploy DITA-OT to be ran in AWS products.
+The _AWS based DITA-OT_ is a set of configurations to deploy DITA-OT and other conversion tools to be ran using AWS products.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ npm install
 
 ## Deployment
 
-The first time you deploy an AWS CDK app into an environment, you’ll need to [bootstrap CDK][bootstrap]:
+The first time you deploy an AWS CDK app for an AWS user, you’ll need to [bootstrap CDK][bootstrap]:
 
 ```bash
 npm run bootstrap
