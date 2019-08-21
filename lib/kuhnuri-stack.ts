@@ -36,31 +36,36 @@ export class KuhnuriStack extends cdk.Stack {
     // ECR
     // ===
 
-    const workers = conf.workers.map((worker, i) => {
-      let asset;
-      const plugins = (worker as DitaWorker).plugins || [];
-      if (plugins.length !== 0) {
-        const lines = [`FROM ${worker.image}`].concat(
-          plugins.map(plugin => `RUN dita --install ${plugin}`)
-        );
-        const dir = `build/docker/${i}`;
-        try {
-          fs.mkdirSync(dir, { recursive: true });
-        } catch (err) {
-          if (err !== "EEXIST") {
-            throw err;
+    const workers = new Map(
+      Object.entries(conf.workers).map(([name, worker], i) => {
+        let asset;
+        const plugins = (worker as DitaWorker).plugins || [];
+        if (plugins.length !== 0) {
+          const lines = [`FROM ${worker.image}`].concat(
+            plugins.map(plugin => `RUN dita --install ${plugin}`)
+          );
+          const dir = `build/docker/${i}`;
+          try {
+            fs.mkdirSync(dir, { recursive: true });
+          } catch (err) {
+            if (err !== "EEXIST") {
+              throw err;
+            }
           }
+          fs.writeFileSync(`${dir}/Dockerfile`, lines.join("\n"));
+          asset = new DockerImageAsset(stack, `DitaOtImage_${i}`, {
+            directory: dir
+          });
         }
-        fs.writeFileSync(`${dir}/Dockerfile`, lines.join("\n"));
-        asset = new DockerImageAsset(stack, `DitaOtImage_${i}`, {
-          directory: dir
-        });
-      }
-      return {
-        ...worker,
-        asset
-      };
-    });
+        return [
+          name,
+          {
+            ...worker,
+            asset
+          }
+        ];
+      })
+    );
 
     // Batch
     // =====
@@ -191,44 +196,49 @@ export class KuhnuriStack extends cdk.Stack {
       priority: 0
     });
 
-    const jobDefinitions = workers.map((worker, i) => {
-      const image = worker.asset ? worker.asset.imageUri : worker.image;
-      const jobDefinition = new batch.CfnJobDefinition(
-        stack,
-        `DitaOtJobDefinition_${i}`,
-        {
-          type: "container",
-          // jobDefinitionName: "DitaOtJobDefinition",
-          // parameters: {},
-          containerProperties: {
-            command: ["dita"],
-            environment: [
-              {
-                name: "AWS_DEFAULT_REGION",
-                value: conf.region
-              },
-              {
-                name: "AWS_REGION",
-                value: conf.region
-              }
-            ],
-            image,
-            // instanceType : String,
-            jobRoleArn: batchJobRole.roleArn,
-            memory: 1024,
-            // mountPoints : [ MountPoints, ... ],
-            // privileged : Boolean,
-            readonlyRootFilesystem: false,
-            // resourceRequirements : [ ResourceRequirement, ... ],
-            // ulimits : [ Ulimit, ... ],
-            // user : String,
-            vcpus: 1
-            // volumes : [ Volumes, ... ]
+    const jobDefinitions = Array.from(workers.entries()).map(
+      //new Map(
+      ([name, worker], i) => {
+        const image = worker.asset ? worker.asset.imageUri : worker.image;
+        const jobDefinition = new batch.CfnJobDefinition(
+          stack,
+          `DitaOtJobDefinition_${i}`,
+          {
+            type: "container",
+            // jobDefinitionName: "DitaOtJobDefinition",
+            // parameters: {},
+            containerProperties: {
+              command: ["dita"],
+              environment: [
+                {
+                  name: "AWS_DEFAULT_REGION",
+                  value: conf.region
+                },
+                {
+                  name: "AWS_REGION",
+                  value: conf.region
+                }
+              ],
+              image,
+              // instanceType : String,
+              jobRoleArn: batchJobRole.roleArn,
+              memory: 1024,
+              // mountPoints : [ MountPoints, ... ],
+              // privileged : Boolean,
+              readonlyRootFilesystem: false,
+              // resourceRequirements : [ ResourceRequirement, ... ],
+              // ulimits : [ Ulimit, ... ],
+              // user : String,
+              vcpus: 1
+              // volumes : [ Volumes, ... ]
+            }
           }
-        }
-      );
-      return { jobDefinition, transtypes: worker.transtypes };
-    });
+        );
+        return { jobDefinition, transtypes: worker.transtypes };
+        // return [name, jobDefinition];
+      }
+    );
+    // );
 
     const batchEvent = new events.Rule(stack, "BatchEvent", {
       enabled: true,
@@ -284,6 +294,9 @@ export class KuhnuriStack extends cdk.Stack {
             resources: jobDefinitions
               .map(jobDefinition => jobDefinition.jobDefinition.ref)
               .concat(queue.ref)
+            // resources: Array.from(jobDefinitions.values())
+            //   .map(jobDefinition => jobDefinition.ref)
+            //   .concat(queue.ref)
           })
         ]
       })
@@ -297,6 +310,7 @@ export class KuhnuriStack extends cdk.Stack {
       role: createLambdaRole
     });
     createLambda.addEnvironment("JOB_QUEUE", queue.ref);
+
     jobDefinitions.forEach(jobDefinition => {
       jobDefinition.transtypes.forEach(transtype => {
         createLambda.addEnvironment(
@@ -305,6 +319,16 @@ export class KuhnuriStack extends cdk.Stack {
         );
       });
     });
+
+    // Object.entries(conf.transtypes).forEach(([name, steps]) => {
+    //   // transtype.transtypes.forEach(transtype => {
+    //   createLambda.addEnvironment(
+    //     `JOB_DEFINITION_${name}`,
+    //     jobDefinition.jobDefinition.ref
+    //   );
+    //   // });
+    // });
+
     createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
     createLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
     createLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);

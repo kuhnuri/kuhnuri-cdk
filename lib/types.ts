@@ -16,11 +16,16 @@ export type GenericWorker = {
 
 type Worker = DitaWorker | GenericWorker;
 
+type Transtype = {
+  worker: string;
+  params: Record<string, string>;
+};
+
 export type Config = {
   // baseImage: string;
   /** Transtypes and how they are split into tasks */
   transtypes: Record<string, string[]>;
-  workers: Worker[];
+  workers: Record<string, Worker>;
   environments: {
     type: "SPOT" | "EC2";
   }[];

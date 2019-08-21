@@ -10,12 +10,14 @@ export default {
     // graphics: ["graphics"],
     docx: ["graphics", "docx"]
   },
-  workers: [
-    {
+  workers: {
+    basic: {
       transtypes: ["html5"],
       image: "jelovirt/kuhnuri_batch_worker:3.2"
+      // TODO add cpu
+      // TODO add memory
     },
-    {
+    custom: {
       transtypes: ["fo", "html2pdf", "docx"],
       image: "jelovirt/kuhnuri_batch_worker:3.2",
       plugins: [
@@ -24,19 +26,19 @@ export default {
         "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
       ]
     },
-    {
+    for: {
       transtypes: ["fop"],
       image: "jelovirt/kuhnuri_batch_fop_worker:3.2"
     },
-    {
+    graphics: {
       transtypes: ["graphics"],
       image: "jelovirt/kuhnuri_batch_graphics_worker:3.2"
     },
-    {
+    weasyprint: {
       transtypes: ["weasyprint"],
       image: "jelovirt/kuhnuri_batch_weasyprint_worker:3.2"
     }
-  ],
+  },
   environments: [
     {
       type: "SPOT"
