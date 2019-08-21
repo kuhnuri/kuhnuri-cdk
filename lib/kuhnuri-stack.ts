@@ -10,7 +10,7 @@ import dynamodb = require("@aws-cdk/aws-dynamodb");
 import events = require("@aws-cdk/aws-events");
 import targets = require("@aws-cdk/aws-events-targets");
 import { DockerImageAsset } from "@aws-cdk/aws-ecr-assets";
-import { Config, DitaWorker } from "./types";
+import { Config, DitaWorker, Transtype } from "./types";
 
 export class KuhnuriStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: cdk.StackProps) {
@@ -202,7 +202,7 @@ export class KuhnuriStack extends cdk.Stack {
         const image = worker.asset ? worker.asset.imageUri : worker.image;
         const jobDefinition = new batch.CfnJobDefinition(
           stack,
-          `DitaOtJobDefinition_${i}`,
+          `DitaOtJobDefinition_${name}`,
           {
             type: "container",
             // jobDefinitionName: "DitaOtJobDefinition",
@@ -222,14 +222,14 @@ export class KuhnuriStack extends cdk.Stack {
               image,
               // instanceType : String,
               jobRoleArn: batchJobRole.roleArn,
-              memory: 1024,
+              memory: worker.memory || 1024,
               // mountPoints : [ MountPoints, ... ],
               // privileged : Boolean,
               readonlyRootFilesystem: false,
               // resourceRequirements : [ ResourceRequirement, ... ],
               // ulimits : [ Ulimit, ... ],
               // user : String,
-              vcpus: 1
+              vcpus: worker.vcpus || 1
               // volumes : [ Volumes, ... ]
             }
           }
@@ -320,27 +320,12 @@ export class KuhnuriStack extends cdk.Stack {
       });
     });
 
-    // Object.entries(conf.transtypes).forEach(([name, steps]) => {
-    //   // transtype.transtypes.forEach(transtype => {
-    //   createLambda.addEnvironment(
-    //     `JOB_DEFINITION_${name}`,
-    //     jobDefinition.jobDefinition.ref
-    //   );
-    //   // });
-    // });
-
     createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
     createLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
     createLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
-    const transtypeToWorkers = Object.fromEntries(
-      Object.entries(conf.transtypes).map(([key, value]) => [
-        key,
-        value.map(v => v.worker)
-      ])
-    );
     createLambda.addEnvironment(
       "TRANSTYPE_TO_TASK",
-      JSON.stringify(transtypeToWorkers)
+      JSON.stringify(conf.transtypes)
     );
 
     // Upload

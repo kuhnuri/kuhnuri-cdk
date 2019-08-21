@@ -1,4 +1,5 @@
 import { Create, Job, Task, URI } from "./types";
+import { Transtype } from "../lib/types";
 import { APIGatewayEvent } from "aws-lambda";
 import { Batch, DynamoDB } from "aws-sdk";
 import { readEnv, error, response, jarUri } from "./utils";
@@ -45,7 +46,7 @@ async function submitJob(job: Job): Promise<Job> {
     }
     let params: Batch.SubmitJobRequest = {
       jobName: task.id,
-      jobDefinition: readEnv(`JOB_DEFINITION_${task.transtype}`),
+      jobDefinition: readEnv(`JOB_DEFINITION_${task.worker}`),
       jobQueue: readEnv("JOB_QUEUE"),
       dependsOn,
       containerOverrides: {
@@ -90,31 +91,35 @@ async function submitJob(job: Job): Promise<Job> {
 }
 
 export function splitToTasks(body: Create, id: string): Job {
-  const transtypeToTasks = JSON.parse(readEnv("TRANSTYPE_TO_TASK"));
-  const transtypes = body.transtype.reduce(
-    (acc, cur) => acc.concat(transtypeToTasks[cur] || [cur]),
-    [] as string[]
+  const transtypeToWorkers: Record<string, Transtype[]> = JSON.parse(
+    readEnv("TRANSTYPE_TO_TASK")
+  );
+  const workers: Transtype[] = body.transtype.reduce(
+    (acc, cur) => acc.concat(transtypeToWorkers[cur]),
+    [] as Transtype[]
   );
   const jobId = body.id || id;
   const output = body.output || generateOutputUri(jobId);
-  const tasks = transtypes.map((transtype, i) => {
-    const isFirst = i === 0;
-    const isLast = i === transtypes.length - 1;
-    const taskId = generateTaskId(i);
-    const prevTaskId = generateTaskId(i - 1);
-    return {
-      id: taskId,
-      job: jobId,
-      transtype,
-      params: body.params,
-      status: "queue",
-      input: isFirst ? body.input : generateTempUri(prevTaskId),
-      output: isLast ? output : generateTempUri(taskId)
-      // processing?: Date;
-      // worker?: string;
-      // finished?: Date;
-    } as Task;
-  });
+  const tasks = workers.map(
+    (worker: Transtype, i): Task => {
+      const isFirst = i === 0;
+      const isLast = i === workers.length - 1;
+      const taskId = generateTaskId(i);
+      const prevTaskId = generateTaskId(i - 1);
+      return {
+        id: taskId,
+        job: jobId,
+        transtype: worker.params ? worker.params.transtype : undefined,
+        params: body.params,
+        status: "queue",
+        input: isFirst ? body.input : generateTempUri(prevTaskId),
+        output: isLast ? output : generateTempUri(taskId),
+        // processing?: Date;
+        worker: worker.worker
+        // finished?: Date;
+      };
+    }
+  );
   return {
     id: jobId,
     input: body.input,

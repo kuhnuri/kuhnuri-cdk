@@ -14,6 +14,10 @@ export default {
       { worker: "custom", params: { transtype: "fo" } },
       { worker: "fop" }
     ],
+    fo2pdf: [
+      { worker: "custom", params: { transtype: "fo" } },
+      { worker: "ahf" }
+    ],
     html2pdf: [
       { worker: "custom", params: { transtype: "html5" } },
       { worker: "weasyprint" }
@@ -28,8 +32,6 @@ export default {
     basic: {
       transtypes: ["html5"],
       image: "jelovirt/kuhnuri_batch_worker:3.2"
-      // TODO add cpu
-      // TODO add memory
     },
     custom: {
       transtypes: ["fo", "html2pdf", "docx"],
@@ -40,7 +42,7 @@ export default {
         "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
       ]
     },
-    for: {
+    fop: {
       transtypes: ["fop"],
       image: "jelovirt/kuhnuri_batch_fop_worker:3.2"
     },
@@ -51,6 +53,12 @@ export default {
     weasyprint: {
       transtypes: ["weasyprint"],
       image: "jelovirt/kuhnuri_batch_weasyprint_worker:3.2"
+    },
+    ahf: {
+      transtypes: ["ahf"],
+      image: "jelovirt/kuhnuri_batch_ahf_worker:3.2",
+      vcpus: 1,
+      memory: 2048
     }
   },
   environments: [

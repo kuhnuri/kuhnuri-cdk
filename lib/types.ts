@@ -1,22 +1,21 @@
 import { Environment } from "@aws-cdk/core";
 
-export type DitaWorker = {
-  /** List of transtypes the worker can process */
-  transtypes: string[];
-  /** List of plug-ins installed on worker DITA-OT */
-  plugins: string[];
-  image: string;
-};
-
 export type GenericWorker = {
   /** List of transtypes the worker can process */
   transtypes: string[];
   image: string;
+  vcpus?: number;
+  memory?: number;
 };
+
+export type DitaWorker = {
+  /** List of plug-ins installed on worker DITA-OT */
+  plugins: string[];
+} & GenericWorker;
 
 type Worker = DitaWorker | GenericWorker;
 
-type Transtype = {
+export type Transtype = {
   worker: string;
   params?: Record<string, string>;
 };

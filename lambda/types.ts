@@ -18,11 +18,11 @@ export type Task = {
   job: string;
   input?: URI;
   output?: URI;
-  transtype: string;
+  transtype?: string;
   params?: Record<string, string>;
   status: Status;
   processing?: DateTime;
-  worker?: string;
+  worker: string;
   finished?: DateTime;
 };
 

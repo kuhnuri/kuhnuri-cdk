@@ -3,7 +3,11 @@ import { Create, Job } from "../lambda/types";
 const assert = require("assert");
 
 describe("splitToTasks", () => {
-  process.env.TRANSTYPE_TO_TASK = JSON.stringify({ html5: ["html5"] });
+  process.env.TRANSTYPE_TO_TASK = JSON.stringify({
+    html5: [{ worker: "basic-worker", params: { transtype: "html5" } }],
+    upload: [{ worker: "upload-worker" }],
+    graphics: [{ worker: "graphics-worker" }]
+  });
   process.env.S3_TEMP_BUCKET = "tmp";
   process.env.S3_OUTPUT_BUCKET = "out";
   describe("with fixed output", () => {
@@ -18,6 +22,7 @@ describe("splitToTasks", () => {
       assert.equal(job.output, "bar");
       assert.equal(job.transtype.length, 1);
       assert.equal(job.transtype[0].transtype, "html5");
+      assert.equal(job.transtype[0].worker, "basic-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "bar");
     });
@@ -32,9 +37,11 @@ describe("splitToTasks", () => {
       assert.equal(job.output, "bar");
       assert.equal(job.transtype.length, 2);
       assert.equal(job.transtype[0].transtype, "html5");
+      assert.equal(job.transtype[0].worker, "basic-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "jar:s3://tmp/guid_0.zip!/");
-      assert.equal(job.transtype[1].transtype, "upload");
+      assert.equal(job.transtype[1].transtype, undefined);
+      assert.equal(job.transtype[1].worker, "upload-worker");
       assert.equal(job.transtype[1].input, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].output, "bar");
     });
@@ -48,13 +55,16 @@ describe("splitToTasks", () => {
       assert.equal(job.input, "foo");
       assert.equal(job.output, "bar");
       assert.equal(job.transtype.length, 3);
-      assert.equal(job.transtype[0].transtype, "graphics");
+      assert.equal(job.transtype[0].transtype, undefined);
+      assert.equal(job.transtype[0].worker, "graphics-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].transtype, "html5");
+      assert.equal(job.transtype[1].worker, "basic-worker");
       assert.equal(job.transtype[1].input, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].output, "jar:s3://tmp/guid_1.zip!/");
-      assert.equal(job.transtype[2].transtype, "upload");
+      assert.equal(job.transtype[2].transtype, undefined);
+      assert.equal(job.transtype[2].worker, "upload-worker");
       assert.equal(job.transtype[2].input, "jar:s3://tmp/guid_1.zip!/");
       assert.equal(job.transtype[2].output, "bar");
     });
@@ -70,6 +80,7 @@ describe("splitToTasks", () => {
       assert.equal(job.output, "jar:s3://out/guid.zip!/");
       assert.equal(job.transtype.length, 1);
       assert.equal(job.transtype[0].transtype, "html5");
+      assert.equal(job.transtype[0].worker, "basic-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "jar:s3://out/guid.zip!/");
     });
@@ -83,9 +94,11 @@ describe("splitToTasks", () => {
       assert.equal(job.output, "jar:s3://out/guid.zip!/");
       assert.equal(job.transtype.length, 2);
       assert.equal(job.transtype[0].transtype, "html5");
+      assert.equal(job.transtype[0].worker, "basic-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "jar:s3://tmp/guid_0.zip!/");
-      assert.equal(job.transtype[1].transtype, "upload");
+      assert.equal(job.transtype[1].transtype, undefined);
+      assert.equal(job.transtype[1].worker, "upload-worker");
       assert.equal(job.transtype[1].input, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].output, "jar:s3://out/guid.zip!/");
     });
@@ -98,13 +111,16 @@ describe("splitToTasks", () => {
       assert.equal(job.input, "foo");
       assert.equal(job.output, "jar:s3://out/guid.zip!/");
       assert.equal(job.transtype.length, 3);
-      assert.equal(job.transtype[0].transtype, "graphics");
+      assert.equal(job.transtype[0].transtype, undefined);
+      assert.equal(job.transtype[0].worker, "graphics-worker");
       assert.equal(job.transtype[0].input, "foo");
       assert.equal(job.transtype[0].output, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].transtype, "html5");
+      assert.equal(job.transtype[1].worker, "basic-worker");
       assert.equal(job.transtype[1].input, "jar:s3://tmp/guid_0.zip!/");
       assert.equal(job.transtype[1].output, "jar:s3://tmp/guid_1.zip!/");
-      assert.equal(job.transtype[2].transtype, "upload");
+      assert.equal(job.transtype[2].transtype, undefined);
+      assert.equal(job.transtype[2].worker, "upload-worker");
       assert.equal(job.transtype[2].input, "jar:s3://tmp/guid_1.zip!/");
       assert.equal(job.transtype[2].output, "jar:s3://out/guid.zip!/");
     });
