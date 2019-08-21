@@ -18,7 +18,7 @@ type Worker = DitaWorker | GenericWorker;
 
 type Transtype = {
   worker: string;
-  // params?: Record<string, string>;
+  params?: Record<string, string>;
 };
 
 export type Config = {
