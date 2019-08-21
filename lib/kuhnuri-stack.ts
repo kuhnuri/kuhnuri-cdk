@@ -332,9 +332,15 @@ export class KuhnuriStack extends cdk.Stack {
     createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);
     createLambda.addEnvironment("S3_TEMP_BUCKET", bucketTemp.bucketName);
     createLambda.addEnvironment("S3_OUTPUT_BUCKET", bucketOutput.bucketName);
+    const transtypeToWorkers = Object.fromEntries(
+      Object.entries(conf.transtypes).map(([key, value]) => [
+        key,
+        value.map(v => v.worker)
+      ])
+    );
     createLambda.addEnvironment(
       "TRANSTYPE_TO_TASK",
-      JSON.stringify(conf.transtypes)
+      JSON.stringify(transtypeToWorkers)
     );
 
     // Upload

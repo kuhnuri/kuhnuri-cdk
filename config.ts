@@ -4,11 +4,11 @@ export default {
   region: process.env.CDK_DEFAULT_REGION,
   account: process.env.CDK_DEFAULT_ACCOUNT,
   transtypes: {
-    html5: ["html5"],
-    pdf2: ["fo", "fop"],
-    html2pdf: ["html2pdf", "weasyprint"],
-    // graphics: ["graphics"],
-    docx: ["graphics", "docx"]
+    html5: [{ worker: "html5" }],
+    pdf2: [{ worker: "fo" }, { worker: "fop" }],
+    html2pdf: [{ worker: "html2pdf" }, { worker: "weasyprint" }],
+    // graphics: [{worker:"graphics"}],
+    docx: [{ worker: "graphics" }, { worker: "docx" }]
   },
   workers: {
     basic: {
