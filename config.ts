@@ -58,7 +58,13 @@ export default {
       transtypes: ["ahf"],
       image: "jelovirt/kuhnuri_batch_ahf_worker:3.2",
       vcpus: 1,
-      memory: 2048
+      memory: 2048,
+      assets: [
+        {
+          src: "assets/AHFormatter.lic",
+          dst: "/AHFormatter/etc/AHFormatter.lic"
+        }
+      ]
     }
   },
   environments: [

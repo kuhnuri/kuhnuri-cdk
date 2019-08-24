@@ -1,4 +1,5 @@
 import fs = require("fs");
+import path = require("path");
 import cdk = require("@aws-cdk/core");
 import iam = require("@aws-cdk/aws-iam");
 import lambda = require("@aws-cdk/aws-lambda");
@@ -40,11 +41,30 @@ export class KuhnuriStack extends cdk.Stack {
       Object.entries(conf.workers).map(([name, worker], i) => {
         let asset;
         const plugins = (worker as DitaWorker).plugins || [];
-        if (plugins.length !== 0) {
-          const lines = [`FROM ${worker.image}`].concat(
-            plugins.map(plugin => `RUN dita --install ${plugin}`)
-          );
+        const assets = worker.assets || [];
+        if (plugins.length !== 0 || assets.length !== 0) {
           const dir = `build/docker/${i}`;
+          const lines: string[] = [`FROM ${worker.image}`];
+          if (plugins.length !== 0) {
+            plugins.forEach(plugin =>
+              lines.push(`RUN dita --install ${plugin}`)
+            );
+          }
+          if (assets.length !== 0) {
+            assets.forEach(a => {
+              const srcAbs = path.resolve(a.src);
+              const tmpAbs = path.resolve(dir, a.src);
+              try {
+                fs.mkdirSync(path.dirname(tmpAbs), { recursive: true });
+              } catch (err) {
+                if (err !== "EEXIST") {
+                  throw err;
+                }
+              }
+              fs.copyFileSync(srcAbs, tmpAbs);
+              lines.push(`COPY ${a.src} ${a.dst}`);
+            });
+          }
           try {
             fs.mkdirSync(dir, { recursive: true });
           } catch (err) {
@@ -53,6 +73,7 @@ export class KuhnuriStack extends cdk.Stack {
             }
           }
           fs.writeFileSync(`${dir}/Dockerfile`, lines.join("\n"));
+          console.log();
           asset = new DockerImageAsset(stack, `DitaOtImage_${i}`, {
             directory: dir
           });
@@ -234,7 +255,7 @@ export class KuhnuriStack extends cdk.Stack {
             }
           }
         );
-        return { jobDefinition, transtypes: worker.transtypes };
+        return { jobDefinition, worker: name }; //transtypes: worker.transtypes,
         // return [name, jobDefinition];
       }
     );
@@ -312,12 +333,12 @@ export class KuhnuriStack extends cdk.Stack {
     createLambda.addEnvironment("JOB_QUEUE", queue.ref);
 
     jobDefinitions.forEach(jobDefinition => {
-      jobDefinition.transtypes.forEach(transtype => {
-        createLambda.addEnvironment(
-          `JOB_DEFINITION_${transtype}`,
-          jobDefinition.jobDefinition.ref
-        );
-      });
+      // jobDefinition.transtypes.forEach(transtype => {
+      createLambda.addEnvironment(
+        `JOB_DEFINITION_${jobDefinition.worker}`,
+        jobDefinition.jobDefinition.ref
+      );
+      // });
     });
 
     createLambda.addEnvironment("TABLE_NAME", jobTable.tableName);

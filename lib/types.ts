@@ -6,6 +6,7 @@ export type GenericWorker = {
   image: string;
   vcpus?: number;
   memory?: number;
+  assets?: { src: string; dst: string }[];
 };
 
 export type DitaWorker = {
