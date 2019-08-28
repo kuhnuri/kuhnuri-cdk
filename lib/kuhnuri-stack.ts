@@ -73,7 +73,6 @@ export class KuhnuriStack extends cdk.Stack {
             }
           }
           fs.writeFileSync(`${dir}/Dockerfile`, lines.join("\n"));
-          console.log();
           asset = new DockerImageAsset(stack, `DitaOtImage_${i}`, {
             directory: dir
           });
@@ -229,7 +228,7 @@ export class KuhnuriStack extends cdk.Stack {
             // jobDefinitionName: "DitaOtJobDefinition",
             // parameters: {},
             containerProperties: {
-              command: ["dita"],
+              // command: ["dita"],
               environment: [
                 {
                   name: "AWS_DEFAULT_REGION",

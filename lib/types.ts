@@ -1,8 +1,6 @@
 import { Environment } from "@aws-cdk/core";
 
 export type GenericWorker = {
-  /** List of transtypes the worker can process */
-  transtypes: string[];
   image: string;
   vcpus?: number;
   memory?: number;

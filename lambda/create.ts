@@ -38,7 +38,10 @@ async function submitJob(job: Job): Promise<Job> {
 
   for (let task of job.transtype) {
     // console.log("Process task", task);
-    const properties = [`-Dtranstype=${task.transtype}`];
+    const properties: string[] = [];
+    if (task.transtype) {
+      properties.push(`-Dtranstype=${task.transtype}`);
+    }
     if (task.params) {
       Object.keys(task.params).forEach(key => {
         properties.push(`"-D${key}=${task.params![key]}"`);
@@ -110,7 +113,7 @@ export function splitToTasks(body: Create, id: string): Job {
         id: taskId,
         job: jobId,
         transtype: worker.params ? worker.params.transtype : undefined,
-        params: body.params,
+        params: { ...worker.params, ...body.params },
         status: "queue",
         input: isFirst ? body.input : generateTempUri(prevTaskId),
         output: isLast ? output : generateTempUri(taskId),

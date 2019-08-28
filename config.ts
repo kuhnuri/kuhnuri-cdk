@@ -1,6 +1,6 @@
 import { Config } from "./lib/types";
 
-export default {
+const config: Config = {
   region: process.env.CDK_DEFAULT_REGION,
   account: process.env.CDK_DEFAULT_ACCOUNT,
   transtypes: {
@@ -15,7 +15,7 @@ export default {
       { worker: "fop" }
     ],
     fo2pdf: [
-      { worker: "custom", params: { transtype: "fo" } },
+      { worker: "custom", params: { transtype: "fo", "pdf.formatter": "ah" } },
       { worker: "ahf" }
     ],
     html2pdf: [
@@ -30,11 +30,9 @@ export default {
   },
   workers: {
     basic: {
-      transtypes: ["html5"],
       image: "jelovirt/kuhnuri_batch_worker:3.2"
     },
     custom: {
-      transtypes: ["fo", "html2pdf", "docx"],
       image: "jelovirt/kuhnuri_batch_worker:3.2",
       plugins: [
         "com.elovirta.fo",
@@ -43,19 +41,15 @@ export default {
       ]
     },
     fop: {
-      transtypes: ["fop"],
       image: "jelovirt/kuhnuri_batch_fop_worker:3.2"
     },
     graphics: {
-      transtypes: ["graphics"],
       image: "jelovirt/kuhnuri_batch_graphics_worker:3.2"
     },
     weasyprint: {
-      transtypes: ["weasyprint"],
       image: "jelovirt/kuhnuri_batch_weasyprint_worker:3.2"
     },
     ahf: {
-      transtypes: ["ahf"],
       image: "jelovirt/kuhnuri_batch_ahf_worker:3.2",
       vcpus: 1,
       memory: 2048,
@@ -75,4 +69,6 @@ export default {
     //   type: "EC2"
     // }
   ]
-} as Config;
+};
+
+export default config;
