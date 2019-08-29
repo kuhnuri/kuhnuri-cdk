@@ -37,16 +37,9 @@ async function submitJob(job: Job): Promise<Job> {
   const tasks = [];
 
   for (let task of job.transtype) {
-    // console.log("Process task", task);
-    const properties: string[] = [];
-    if (task.transtype) {
-      properties.push(`-Dtranstype=${task.transtype}`);
-    }
-    if (task.params) {
-      Object.keys(task.params).forEach(key => {
-        properties.push(`"-D${key}=${task.params![key]}"`);
-      });
-    }
+    const properties: string[] = task.params
+      ? Object.entries(task.params).map(([name, value]) => `-D${name}=${value}`)
+      : [];
     let params: Batch.SubmitJobRequest = {
       jobName: task.id,
       jobDefinition: readEnv(`JOB_DEFINITION_${task.worker}`),
@@ -112,7 +105,6 @@ export function splitToTasks(body: Create, id: string): Job {
       return {
         id: taskId,
         job: jobId,
-        transtype: worker.params ? worker.params.transtype : undefined,
         params: { ...worker.params, ...body.params },
         status: "queue",
         input: isFirst ? body.input : generateTempUri(prevTaskId),

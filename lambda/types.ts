@@ -18,9 +18,7 @@ export type Task = {
   job: string;
   input?: URI;
   output?: URI;
-  // We don't need this, stick into params
-  transtype?: string;
-  params?: Record<string, string>;
+  params: Record<string, string>;
   status: Status;
   processing?: DateTime;
   worker: string;
