@@ -19,7 +19,7 @@ const config: Config = {
       { worker: "ahf" }
     ],
     html2pdf: [
-      { worker: "custom", params: { transtype: "html5" } },
+      { worker: "custom", params: { transtype: "html2pdf" } },
       { worker: "weasyprint" }
     ],
     // graphics: [{worker:"graphics"}],
@@ -37,6 +37,7 @@ const config: Config = {
       plugins: [
         "com.elovirta.fo",
         "com.elovirta.ooxml",
+        "https://github.com/jelovirt/com.elovirta.html2pdf/releases/download/0.1.0/com.elovirta.html2pdf-0.1.0.zip",
         "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
       ]
     },
