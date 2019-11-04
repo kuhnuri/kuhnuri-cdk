@@ -37,7 +37,6 @@ const config: Config = {
       plugins: [
         "com.elovirta.fo",
         "com.elovirta.ooxml",
-        "https://github.com/jelovirt/com.elovirta.html2pdf/releases/download/0.1.0/com.elovirta.html2pdf-0.1.0.zip",
         "https://github.com/jelovirt/com.elovirta.html2pdf/archive/master.zip"
       ]
     },
